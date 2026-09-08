@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- 首页天气：Open-Meteo 免费接口（无 key） -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- SceneView 3D 引擎声明 minSdk 28，实际 Filament 在 API 26 可用，覆盖之 -->
+    <uses-sdk tools:overrideLibrary="io.github.sceneview" />
+
+    <!-- 音乐后台播放：前台服务（mediaPlayback）+ 通知栏遥控 + 播放时防休眠 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
+    <application
+        android:name=".LumiApp"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Lumi">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.Lumi.Splash">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".music.MusicService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <!-- 专注计时通知栏遥控（暂停/继续/完成），不对外暴露 -->
+        <receiver
+            android:name=".ui.focus.FocusNotificationReceiver"
+            android:exported="false" />
+    </application>
+
+</manifest>

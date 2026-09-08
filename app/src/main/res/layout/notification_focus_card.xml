@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 专注计时通知卡片（黑白风）：秒表图标 + Chronometer 大数字走秒 + 状态行 + 暂停/完成两圆钮。
+     颜色引用 @color/noti_*，values / values-night 两套，深浅形态随系统夜间模式自动切换。 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_noti_card">
+
+    <LinearLayout
+        android:id="@+id/card_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="14dp"
+        android:paddingEnd="10dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
+
+        <ImageView
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:src="@drawable/ic_notif_timer"
+            android:tint="@color/noti_btn_tint"
+            android:contentDescription="@null" />
+
+        <Chronometer
+            android:id="@+id/chrono"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:textColor="@color/noti_card_title" />
+
+        <ImageButton
+            android:id="@+id/btn_toggle"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:layout_marginEnd="10dp"
+            android:background="@drawable/notif_btn_accent_bg"
+            android:padding="8dp"
+            android:src="@drawable/ic_noti_pause"
+            android:tint="@color/noti_focus_accent_icon"
+            android:contentDescription="@string/focus_notif_toggle" />
+
+        <ImageButton
+            android:id="@+id/btn_finish"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:background="@drawable/notif_btn_subtle_bg"
+            android:padding="8dp"
+            android:src="@drawable/ic_notif_stop"
+            android:tint="@color/noti_btn_tint"
+            android:contentDescription="@string/focus_notif_finish" />
+    </LinearLayout>
+</FrameLayout>

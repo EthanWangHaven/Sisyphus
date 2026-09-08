@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 西西弗斯石头：白底 + 细斜线 + 黑色圆角方形石（一角触线，与专注页 Hill 模式石头同款） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 细斜线：左下 → 右上 -->
+    <path
+        android:pathData="M22,87 L88,47"
+        android:strokeColor="#1C1C1E"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round" />
+    <!-- 黑色圆角方形石：13.8° 顺旋，右下圆角与斜线上缘相切（translateY 由点到直线距离解出） -->
+    <group android:rotation="13.8" android:pivotX="46.3" android:pivotY="48.8"
+        android:scaleX="1.15" android:scaleY="1.15" android:translateY="2.23">
+        <path
+            android:fillColor="#1C1C1E"
+            android:pathData="M42,35.7 H50.6 A8.7,8.7 0 0 1 59.3,44.4 V53 A8.7,8.7 0 0 1 50.6,61.7 H42 A8.7,8.7 0 0 1 33.3,53 V44.4 A8.7,8.7 0 0 1 42,35.7 Z" />
+    </group>
+</vector>

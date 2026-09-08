@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 专注通知卡片白色底：圆角对齐系统通知卡片，避免折叠态露出直角白块 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/noti_card_mask" />
+    <corners android:radius="26dp" />
+</shape>

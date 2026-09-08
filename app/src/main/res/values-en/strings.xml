@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sisyphus</string>
+
+    <!-- ============ Common ============ -->
+    <string name="s5f4112">Back</string>
+    <string name="s769d88">Done</string>
+    <string name="s625fb2">Cancel</string>
+    <string name="s2f4aad">Delete</string>
+    <string name="s95b351">Edit</string>
+    <string name="sbe5fbb">Save</string>
+    <string name="sbd9fcf">Undo</string>
+    <string name="s83611a">Post</string>
+    <string name="s44a77d">Untitled</string>
+    <string name="s32c65d">Title</string>
+    <string name="s6b36c6">Color</string>
+    <string name="s5ef69f">Icon</string>
+    <string name="saae763">Tags</string>
+    <string name="sd3521e">Location (optional)</string>
+    <string name="s3a17b7">min</string>
+    <string name="s1a183a">Home</string>
+    <string name="language">Language</string>
+    <string name="s71bbc7">Follow system</string>
+    <string name="s8755e9">Light mode</string>
+    <string name="s18d148">Dark mode</string>
+    <string name="sf8a3c1">Font weight</string>
+    <string name="s2b7e9d">Standard</string>
+    <string name="version_fmt">Version %1$s</string>
+    <string name="s1324f0">Notes &amp; Todos</string>
+    <string name="s7051dc">Notes</string>
+    <string name="s7e66eb">Notes</string>
+    <string name="sb60ec8">Todos</string>
+    <string name="se217c5">Focus</string>
+    <string name="s8e5e86">Moments</string>
+    <string name="s49e233">Moments</string>
+    <string name="s95521b">Music</string>
+    <string name="scd27ec">Habits</string>
+    <string name="se366cc">Settings</string>
+    <string name="safcde2">Appearance</string>
+    <string name="s81d9f5">About</string>
+
+    <!-- ============ Home ============ -->
+    <string name="sfad522">Done</string>
+    <string name="s48b826">No todos yet</string>
+    <string name="s48c14f">Add tasks on the Notes &amp; Todos page</string>
+    <string name="s714675">Tap the + button to add tasks</string>
+    <string name="s7c5b9b">No matching notes</string>
+    <string name="s33930e">Capture your first everyday snippet</string>
+    <string name="sb202c5">Try a different category or keyword</string>
+    <string name="s0d63c6">Check-in</string>
+    <string name="s22cce7">A little better every day</string>
+    <string name="s03f487">Ten tracks</string>
+    <string name="s4e52e0">Healing music</string>
+    <string name="s11ab90">Gentle music to unwind</string>
+    <string name="sf3f2dc">Ten gentle tracks to unwind</string>
+    <string name="sb86dfc">Todos &amp; notes, a minimal personal journal</string>
+    <string name="s8ed1a5">A gentle home for everyday fragments</string>
+
+    <!-- ============ Weather ============ -->
+    <string name="seabe42">Sunny</string>
+    <string name="s786139">Cloudy</string>
+    <string name="sca4062">Overcast</string>
+    <string name="s090606">Fog</string>
+    <string name="s42b8a6">Drizzle</string>
+    <string name="sa65bb4">Freezing rain</string>
+    <string name="s954337">Rain</string>
+    <string name="sc4fccd">Snow</string>
+    <string name="sb2df13">Thunderstorm</string>
+    <string name="se94e8b">Shanghai</string>
+
+    <!-- ============ Weekdays ============ -->
+    <string name="s7941da">Mon</string>
+    <string name="s2d8be2">Tue</string>
+    <string name="se662ff">Wed</string>
+    <string name="s21716c">Thu</string>
+    <string name="s1fcc29">Fri</string>
+    <string name="s61b453">Sat</string>
+    <string name="s3edddd">Sun</string>
+
+    <!-- ============ Todos ============ -->
+    <string name="scf0a3e">Pending</string>
+    <string name="sa8b0c2">All</string>
+    <string name="s5b27c9">Search todos</string>
+    <string name="s3f5a2b">Close search</string>
+    <string name="sb994c3">Edit Todo</string>
+    <string name="add_todo_title">Add Todo</string>
+    <string name="s329fde">Delete Todo</string>
+    <string name="del_confirm">Delete \"%1$s\"? This can\'t be undone.</string>
+
+    <!-- ============ Notes ============ -->
+    <string name="s3147cb">New Note</string>
+    <string name="s847dcf">Delete Note</string>
+    <string name="s7bda38">No notes yet</string>
+    <string name="sbcd47c">Search notes</string>
+    <string name="s77932d">Capture this moment…</string>
+    <string name="s9abf6a">Start writing…</string>
+    <string name="s9930eb">Tap the button below to start writing</string>
+    <string name="s9d2f1a">Clear search</string>
+    <string name="saved_at_fmt">Saved · %1$s</string>
+
+    <!-- ============ Moments ============ -->
+    <string name="s202ae3">Edit Moment</string>
+    <string name="sf3d3df">Delete Moment</string>
+    <string name="sa695e5">Delete this moment?</string>
+    <string name="sd64fda">Moment deleted</string>
+    <string name="s0cd71b">No moments yet</string>
+    <string name="s2295dc">Capture a Moment</string>
+    <string name="s605687">Save this moment</string>
+    <string name="s2f3a89">Close preview</string>
+    <string name="s833152">Remove photo</string>
+    <string name="sb89fb3">Add photo</string>
+    <string name="photo_count_fmt">%1$d</string>
+
+    <!-- ============ Focus ============ -->
+    <string name="s042f76">Focus stats</string>
+    <string name="s9a6ac1">Rocks</string>
+    <string name="s2a1a7d">Day streak</string>
+    <string name="s6d6126">Sisyphus\nis waiting for you.</string>
+    <string name="focus_month">%1$d</string>
+    <string name="minutes_fmt">%1$d min</string>
+    <string name="s9a018b">Work</string>
+    <string name="s687a7e">Reading</string>
+    <string name="s4ef520">Study</string>
+    <string name="s37b6de">Workout</string>
+    <string name="s4baafe">Meditation</string>
+
+    <!-- Focus timer notification -->
+    <string name="focus_notif_channel">Focus timer</string>
+    <string name="focus_notif_sub">Focus · %1$s</string>
+    <string name="focus_notif_paused_sub">Paused · %1$s</string>
+    <string name="focus_notif_toggle">Pause or resume</string>
+    <string name="focus_notif_finish">Finish</string>
+
+    <!-- Focus 2.0: pet / smoke / print -->
+    <string name="focus_label_pet">Pet</string>
+    <string name="focus_label_smoke">Smoke</string>
+    <string name="focus_fixed">Extras</string>
+    <string name="focus_custom_hint">Enter a name</string>
+    <string name="focus_pet_title">Cyber Pet</string>
+    <string name="focus_pet_feed">Feed</string>
+    <string name="focus_pet_switch">Switch</string>
+    <string name="focus_pet_hint">Swipe to pet</string>
+    <string name="focus_smoke_title">Cyber Smoke</string>
+    <string name="focus_smoke_ash">Flick ash</string>
+    <string name="focus_smoke_style">Style</string>
+    <string name="focus_smoke_hint">Hold to inhale · release to puff</string>
+    <string name="focus_print_title">Print Energy Bill</string>
+    <string name="focus_print_btn">Print</string>
+    <string name="focus_print_saved">Saved to album</string>
+    <string name="focus_print_done">Done</string>
+    <string name="focus_print_empty">No focus records yet</string>
+    <string name="focus_print_done_flag">✓ Printed</string>
+    <string name="focus_print_records">Records %1$d</string>
+    <string name="focus_print_total">Total</string>
+    <string name="focus_print_records_fmt">%1$d records</string>
+    <string name="focus_print_events">Events</string>
+    <string name="focus_print_printed_at">Printed at</string>
+    <string name="focus_print_no">NO.%1$s</string>
+    <string name="focus_print_min_hint">min</string>
+    <string name="focus_print_count_hint">x</string>
+    <string name="focus_print_pick">Pick categories to print, durations are editable</string>
+    <string name="focus_print_add">Add Item</string>
+    <string name="focus_print_add_activity">Activity</string>
+    <string name="focus_print_add_count">Count</string>
+    <string name="focus_print_add_btn">Add</string>
+
+    <!-- ============ Habits ============ -->
+    <string name="s0b1895">New Habit</string>
+    <string name="sccf098">Edit Habit</string>
+    <string name="s5a6fc1">Delete Habit</string>
+    <string name="del_habit_fmt">Delete \"%1$s\"? Its check-in history will be hidden too.</string>
+    <string name="s253cf0">Habit name (e.g. Drink water)</string>
+    <string name="s0f5c2c">Tap + at the top right to create your first habit</string>
+    <string name="s584fc5">No habits yet</string>
+    <string name="s1c6f49">Checked in</string>
+    <string name="s97b8d9">Not checked in today</string>
+    <string name="see8233">Checked in today</string>
+    <string name="streak_fmt">%1$d-day streak</string>
+    <string name="s8d40c5">Longest streak</string>
+    <string name="sf0259b">Every day</string>
+    <string name="month_year_fmt">%2$d/%1$d</string>
+    <string name="days_unit">days</string>
+
+    <!-- ============ Music ============ -->
+    <string name="s42ce5d">Pick a track from the library</string>
+    <string name="playlist_fmt">Playlist · %1$d tracks</string>
+    <string name="s7c2e9a">Collapse</string>
+    <string name="s579321">Previous</string>
+    <string name="scfd960">Next</string>
+    <string name="sb85270">Play</string>
+    <string name="s8d63ef">Pause</string>
+    <string name="sa2d930">Paused</string>
+    <string name="sacf254">Now Playing</string>
+    <string name="s7e91d9">Repeat one</string>
+    <string name="s700e98">Repeat all</string>
+    <string name="s47cab5">Sleep timer</string>
+    <string name="sleep_minutes_fmt">%1$d min</string>
+    <string name="sleep_pause_fmt">Pause in %1$d min</string>
+    <string name="s298cbe">Music playback</string>
+    <string name="splay_failed">Playback failed. Check your network</string>
+    <string name="sfav_added">Added to favorites</string>
+    <string name="sfav_removed">Removed from favorites</string>
+    <string name="slyrics_na">Lyrics not available yet</string>
+    <string name="music_sync">Sync playlist</string>
+    <string name="music_sort_asc">Ascending</string>
+    <string name="music_sort_desc">Descending</string>
+    <string name="sync_new_fmt">Synced · %1$d new</string>
+    <string name="sync_uptodate">Playlist is up to date</string>
+    <string name="sync_failed">Sync failed. Check your network</string>
+
+    <!-- ============ Relative time / date ============ -->
+    <string name="s4181f7">Just now</string>
+    <string name="rel_minutes_ago">%1$d min ago</string>
+    <string name="rel_hours_ago">%1$d hr ago</string>
+    <string name="s2f8d6f">Yesterday</string>
+    <string name="rel_days_ago">%1$d d ago</string>
+    <string name="date_md">MMM d</string>
+    <!-- Workout -->
+    <string name="wk_overview">Overview</string>
+    <string name="wk_habits">Habits</string>
+    <string name="wk_log">Log workout</string>
+    <string name="wk_empty_day">No workouts logged for this day yet. Tap the button below to add one.</string>
+    <string name="wk_exercise">Exercise</string>
+    <string name="wk_duration">Duration</string>
+    <string name="wk_intensity">Intensity</string>
+    <string name="wk_low">Low</string>
+    <string name="wk_mid">Medium</string>
+    <string name="wk_high">High</string>
+    <string name="wk_custom">Custom</string>
+    <string name="wk_name_hint">Enter exercise name</string>
+    <string name="wk_delete">Delete</string>
+    <string name="wk_min_hint">Minutes</string>
+    <string name="wk_this_month">Exercise time</string>
+    <string name="wk_best">Monthly highlights</string>
+    <string name="wk_longest">Longest workout</string>
+    <string name="wk_peak">Peak intensity</string>
+    <string name="wk_burn">Peak burn</string>
+    <string name="wk_min_fmt">%1$d min</string>
+    <string name="wk_kcal_fmt">%1$d kcal</string>
+    <string name="wk_run">Running</string>
+    <string name="wk_cycling">Cycling</string>
+    <string name="wk_swim">Swimming</string>
+    <string name="wk_strength">Strength</string>
+    <string name="wk_yoga">Yoga</string>
+    <string name="wk_ball">Ball games</string>
+    <string name="wk_stairs">Stair climbing</string>
+    <string name="wk_walk">Walking</string>
+    <!-- Expects (countdown) -->
+    <string name="sx_entry">Expects</string>
+    <string name="sx_exp_sub">Every little thing worth waiting for</string>
+    <string name="sx_exp_empty">Nothing to wait for yet</string>
+    <string name="sx_exp_empty_d">Add a target date and count down each day</string>
+    <string name="sx_add">Add</string>
+    <string name="sx_edit_title">Edit</string>
+    <string name="sx_name">Name</string>
+    <string name="sx_name_hint">Name this expectation</string>
+    <string name="sx_emoji">Icon</string>
+    <string name="sx_cat">Category</string>
+    <string name="sx_cat_festival">Festival</string>
+    <string name="sx_cat_life">Life</string>
+    <string name="sx_target">Target date</string>
+    <string name="sx_count">Countdown</string>
+    <string name="sx_date">Date</string>
+    <string name="sx_y">Y</string>
+    <string name="sx_m">M</string>
+    <string name="sx_d">D</string>
+    <string name="sx_still">in</string>
+    <string name="sx_days">days</string>
+    <string name="sx_passed">passed</string>
+    <string name="sx_days_ago">days ago</string>
+    <string name="sx_today">Today</string>
+    <string name="sx_cancel">Cancel</string>
+    <string name="sx_f01">New Year\'s Day</string>
+    <string name="sx_f02">Valentine\'s Day</string>
+    <string name="sx_f03">Women\'s Day</string>
+    <string name="sx_f04">520 Day</string>
+    <string name="sx_f05">Children\'s Day</string>
+    <string name="sx_f06">Army Day</string>
+    <string name="sx_f07">Teachers\' Day</string>
+    <string name="sx_f08">National Day</string>
+    <string name="sx_f09">Halloween</string>
+    <string name="sx_f10">Christmas Eve</string>
+    <string name="sx_f11">Christmas</string>
+    <string name="sx_f12">New Year\'s Eve</string>
+    <string name="sx_author">Author</string>
+    <!-- Workout stats -->
+    <string name="sx_stats">Stats</string>
+    <string name="sx_p_w">Week</string>
+    <string name="sx_p_m">Month</string>
+    <string name="sx_p_y">Year</string>
+    <string name="sx_wk_empty">No records yet</string>
+    <string name="sx_wk_empty_d">Start your first workout</string>
+    <string name="sx_total_cnt">Sessions</string>
+    <string name="sx_total_min">Total minutes</string>
+    <string name="sx_chart_title">Trend</string>
+    <string name="s4d8e2a">Light</string>
+    <string name="s7c1b9f">Bold</string>
+    <string name="s9a4c7e">Font size</string>
+    <string name="s3f8b2d">Small</string>
+    <string name="s5e1d9c">Large</string>
+    <!-- Home greeting customization -->
+    <string name="greeting_edit_title">Customize greeting</string>
+    <string name="greeting_hint">Enter a greeting; leave empty to reset</string>
+    <!-- Add music (mirrors the web dialog) -->
+    <string name="music_add_title">Add music</string>
+    <string name="music_add_close">Close</string>
+    <string name="music_add_mode_id">Resolve by ID</string>
+    <string name="music_add_mode_file">Upload audio file</string>
+    <string name="music_add_id_label">NetEase Cloud Music ID</string>
+    <string name="music_add_id_hint">Song id or full link, e.g. https://music.163.com/song?id=2707652860</string>
+    <string name="music_add_resolve">Resolve</string>
+    <string name="music_add_file_pick">Tap to pick an audio file (mp3 / m4a / flac ...)</string>
+    <string name="music_add_title_label">Song name *</string>
+    <string name="music_add_title_hint">Song name</string>
+    <string name="music_add_artist_label">Artist *</string>
+    <string name="music_add_artist_hint">Artist</string>
+    <string name="music_add_submit">Add to playlist</string>
+    <string name="music_add_foot">Pushed to GitHub automatically; deploy runs and the song goes live shortly</string>
+    <string name="music_add_done">Committed to repository</string>
+    <string name="music_add_lyrics_fmt">Matched %1$d lyric lines</string>
+    <string name="music_add_no_lyrics">No lyrics matched; you can add them later</string>
+    <string name="music_add_deploy_hint">Playable once GitHub Actions finishes deploying (about 1-2 minutes)</string>
+    <string name="music_add_resolved_fmt">Resolved: %1$s - %2$s, audio ready (%3$sMB). You can edit the info before adding.</string>
+    <string name="music_add_file_fmt">%1$s (%2$sMB)</string>
+    <string name="music_add_phase_resolving">Resolving song info...</string>
+    <string name="music_add_phase_downloading">Downloading audio (may take a while)...</string>
+    <string name="music_add_phase_lyrics">Matching lyrics...</string>
+    <string name="music_add_phase_uploading">Committing to GitHub...</string>
+    <string name="music_add_err_generic">Something went wrong, please retry later</string>
+    <string name="music_add_err_need_id">Enter a music id first</string>
+    <string name="music_add_err_need_resolve">Tap "Resolve" first to fetch song info and audio</string>
+    <string name="music_add_err_need_file">Pick an audio file first</string>
+    <string name="music_add_err_need_meta">Please fill in the song name and artist</string>
+    <string name="music_add_err_need_title">Fill in the song name first</string>
+    <string name="music_add_err_too_large">Audio exceeds 60MB, beyond the GitHub commit limit</string>
+    <string name="music_add_err_artist_page">That is an artist page. Open the specific song page and copy the song or share link</string>
+    <string name="music_add_err_album_page">That is an album page. Open the specific song page and copy the song or share link</string>
+    <string name="music_add_err_playlist_page">That is a playlist page. Open the specific song page and copy the song or share link</string>
+    <string name="music_add_err_bad_link">Cannot extract a song id from this link. Paste a song page link or enter a numeric id</string>
+    <string name="music_add_err_need_id_raw">Enter a numeric song id or a song link</string>
+    <string name="music_add_err_meting_conn">Resolve service unreachable. Retry later or use "Upload audio file"</string>
+    <string name="music_add_err_meting_body">Resolve service returned unexpected data. Try another instance or use "Upload audio file"</string>
+    <string name="music_add_err_no_song">Song not found (bad id or restricted source). Use "Upload audio file" instead</string>
+    <string name="music_add_err_download_fmt">Audio download failed (%1$s). It may be restricted; download it manually and use "Upload audio file"</string>
+    <string name="music_add_err_not_audio">Response is not a valid audio file</string>
+    <string name="music_add_err_too_large_remote">Audio exceeds 60MB, beyond the GitHub commit limit</string>
+    <string name="music_add_err_no_token">GitHub token not configured; cannot commit</string>
+    <string name="music_add_err_bad_id">Invalid song id</string>
+    <string name="music_add_err_dup">A song with the same id already exists in the playlist</string>
+    <string name="music_add_err_gh_fmt">Commit to GitHub failed: %1$s</string>
+    <string name="music_add_err_gh_read_fmt">Failed to read repository file (HTTP %1$d)</string>
+    <string name="music_add_err_lyrics_conn">Lyrics service unreachable</string>
+    <string name="music_add_err_no_lyrics">No lyrics available for this song</string>
+    <string name="music_add_err_search_no_lyrics">No lyrics matched</string>
+    <string name="music_add_err_read_file">Failed to read file</string>
+</resources>

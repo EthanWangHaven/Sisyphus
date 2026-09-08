@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 专注通知按钮底：主按钮圆底（浅色墨底白图标 / 深色白底墨图标） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/noti_focus_accent_bg" />
+</shape>

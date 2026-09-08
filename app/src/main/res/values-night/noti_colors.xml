@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 通知磨砂媒体卡片配色（深色形态） -->
+<resources>
+    <color name="noti_card_mask">#E6151517</color>
+    <color name="noti_card_title">#F2FFFFFF</color>
+    <color name="noti_card_artist">#99FFFFFF</color>
+    <color name="noti_btn_tint">#F2FFFFFF</color>
+
+    <!-- 专注计时卡片：主按钮圆底/图标（深色白底墨图标）+ 次按钮低对比圆底 -->
+    <color name="noti_focus_accent_bg">#F2FFFFFF</color>
+    <color name="noti_focus_accent_icon">#E6151517</color>
+    <color name="noti_focus_subtle_bg">#14FFFFFF</color>
+</resources>

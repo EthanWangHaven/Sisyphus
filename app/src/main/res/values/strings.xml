@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sisyphus</string>
+
+    <!-- ============ 通用 ============ -->
+    <string name="s5f4112">返回</string>
+    <string name="s769d88">完成</string>
+    <string name="s625fb2">取消</string>
+    <string name="s2f4aad">删除</string>
+    <string name="s95b351">编辑</string>
+    <string name="sbe5fbb">保存</string>
+    <string name="sbd9fcf">撤销</string>
+    <string name="s83611a">发布</string>
+    <string name="s44a77d">无标题</string>
+    <string name="s32c65d">标题</string>
+    <string name="s6b36c6">颜色</string>
+    <string name="s5ef69f">图标</string>
+    <string name="saae763">标签</string>
+    <string name="sd3521e">地点（可选）</string>
+    <string name="s3a17b7">分钟</string>
+    <string name="s1a183a">回首页</string>
+    <string name="language">语言</string>
+    <string name="s71bbc7">跟随系统</string>
+    <string name="s8755e9">浅色模式</string>
+    <string name="s18d148">深色模式</string>
+    <string name="sf8a3c1">字体粗细</string>
+    <string name="s2b7e9d">标准</string>
+    <string name="version_fmt">版本 %1$s</string>
+    <string name="s1324f0">备忘录和待办</string>
+    <string name="s7051dc">笔记</string>
+    <string name="s7e66eb">备忘录</string>
+    <string name="sb60ec8">待办</string>
+    <string name="se217c5">专注</string>
+    <string name="s8e5e86">瞬间</string>
+    <string name="s49e233">生活瞬间</string>
+    <string name="s95521b">音乐</string>
+    <string name="scd27ec">习惯打卡</string>
+    <string name="se366cc">设置</string>
+    <string name="safcde2">外观</string>
+    <string name="s81d9f5">关于</string>
+
+    <!-- ============ 首页 ============ -->
+    <string name="sfad522">已完成</string>
+    <string name="s48b826">暂无待办事项</string>
+    <string name="s48c14f">到「笔记和待办」页添加任务</string>
+    <string name="s714675">点击右下角加号添加任务</string>
+    <string name="s7c5b9b">没有找到相关备忘录</string>
+    <string name="s33930e">记录你的第一条日常碎片吧</string>
+    <string name="sb202c5">换个分类或关键词试试</string>
+    <string name="s0d63c6">打卡</string>
+    <string name="s22cce7">每天进步一点点</string>
+    <string name="s03f487">十首音乐</string>
+    <string name="s4e52e0">治愈音乐</string>
+    <string name="s11ab90">温柔音乐，放松身心</string>
+    <string name="sf3f2dc">十首温柔音乐，放松身心</string>
+    <string name="sb86dfc">待办与备忘录，轻量纯粹的个人记录</string>
+    <string name="s8ed1a5">收纳日常所有温柔碎片</string>
+
+    <!-- ============ 天气 ============ -->
+    <string name="seabe42">晴</string>
+    <string name="s786139">多云</string>
+    <string name="sca4062">阴</string>
+    <string name="s090606">雾</string>
+    <string name="s42b8a6">细雨</string>
+    <string name="sa65bb4">冻雨</string>
+    <string name="s954337">雨</string>
+    <string name="sc4fccd">雪</string>
+    <string name="sb2df13">雷雨</string>
+    <string name="se94e8b">上海</string>
+
+    <!-- ============ 周几（周一至周日） ============ -->
+    <string name="s7941da">一</string>
+    <string name="s2d8be2">二</string>
+    <string name="se662ff">三</string>
+    <string name="s21716c">四</string>
+    <string name="s1fcc29">五</string>
+    <string name="s61b453">六</string>
+    <string name="s3edddd">日</string>
+
+    <!-- ============ 待办 ============ -->
+    <string name="scf0a3e">未完成</string>
+    <string name="sa8b0c2">全部</string>
+    <string name="s5b27c9">搜索待办</string>
+    <string name="s3f5a2b">关闭搜索</string>
+    <string name="sb994c3">编辑待办</string>
+    <string name="add_todo_title">添加待办</string>
+    <string name="s329fde">删除待办</string>
+    <string name="del_confirm">确定删除「%1$s」吗？删除后无法恢复。</string>
+
+    <!-- ============ 备忘录 ============ -->
+    <string name="s3147cb">新建备忘录</string>
+    <string name="s847dcf">删除备忘录</string>
+    <string name="s7bda38">还没有备忘录</string>
+    <string name="sbcd47c">搜索笔记</string>
+    <string name="s77932d">记录此刻的碎片…</string>
+    <string name="s9abf6a">开始记录…</string>
+    <string name="s9930eb">点击右下角按钮开始记录</string>
+    <string name="s9d2f1a">清除搜索</string>
+    <string name="saved_at_fmt">已保存 · %1$s</string>
+
+    <!-- ============ 瞬间 ============ -->
+    <string name="s202ae3">编辑瞬间</string>
+    <string name="sf3d3df">删除瞬间</string>
+    <string name="sa695e5">确定删除这条瞬间吗？</string>
+    <string name="sd64fda">已删除一条瞬间</string>
+    <string name="s0cd71b">暂无生活瞬间</string>
+    <string name="s2295dc">记录瞬间</string>
+    <string name="s605687">记下此刻</string>
+    <string name="s2f3a89">关闭预览</string>
+    <string name="s833152">移除图片</string>
+    <string name="sb89fb3">添加图片</string>
+    <string name="photo_count_fmt">%1$d张</string>
+
+    <!-- ============ 专注 ============ -->
+    <string name="s042f76">专注统计</string>
+    <string name="s9a6ac1">块石头</string>
+    <string name="s2a1a7d">连续天</string>
+    <string name="s6d6126">西西弗斯\n正在等你。</string>
+    <string name="focus_month">%1$d 月</string>
+    <string name="minutes_fmt">%1$d 分钟</string>
+    <string name="s9a018b">工作</string>
+    <string name="s687a7e">阅读</string>
+    <string name="s4ef520">学习</string>
+    <string name="s37b6de">运动</string>
+    <string name="s4baafe">冥想</string>
+
+    <!-- 专注计时通知 -->
+    <string name="focus_notif_channel">专注计时</string>
+    <string name="focus_notif_sub">专注 · %1$s</string>
+    <string name="focus_notif_paused_sub">已暂停 · %1$s</string>
+    <string name="focus_notif_toggle">暂停或继续</string>
+    <string name="focus_notif_finish">完成</string>
+
+    <!-- 专注页 2.0：撸宠/吸烟/打印 -->
+    <string name="focus_label_pet">撸宠</string>
+    <string name="focus_label_smoke">吸烟</string>
+    <string name="focus_fixed">固定功能</string>
+    <string name="focus_custom_hint">输入项目名称</string>
+    <string name="focus_pet_title">赛博撸宠</string>
+    <string name="focus_pet_feed">喂食</string>
+    <string name="focus_pet_switch">换一只</string>
+    <string name="focus_pet_hint">滑动撸一撸</string>
+    <string name="focus_smoke_title">赛博吸烟</string>
+    <string name="focus_smoke_ash">弹灰</string>
+    <string name="focus_smoke_style">换款式</string>
+    <string name="focus_smoke_hint">按住吸入 · 松开吐圈</string>
+    <string name="focus_print_title">打印精力消费单</string>
+    <string name="focus_print_btn">打印</string>
+    <string name="focus_print_saved">已保存到相册</string>
+    <string name="focus_print_done">完成</string>
+    <string name="focus_print_empty">还没有专注记录</string>
+    <string name="focus_print_done_flag">✓ 打印完成</string>
+    <string name="focus_print_records">记录 %1$d</string>
+    <string name="focus_print_total">合计</string>
+    <string name="focus_print_records_fmt">%1$d 条记录</string>
+    <string name="focus_print_events">事件</string>
+    <string name="focus_print_printed_at">打印时间</string>
+    <string name="focus_print_no">NO.%1$s</string>
+    <string name="focus_print_min_hint">分钟</string>
+    <string name="focus_print_count_hint">次</string>
+    <string name="focus_print_pick">勾选要打印的项目，时长可编辑调整</string>
+    <string name="focus_print_add">添加项目</string>
+    <string name="focus_print_add_activity">选择活动</string>
+    <string name="focus_print_add_count">次数</string>
+    <string name="focus_print_add_btn">添加</string>
+
+    <!-- ============ 习惯 ============ -->
+    <string name="s0b1895">新建习惯</string>
+    <string name="sccf098">编辑习惯</string>
+    <string name="s5a6fc1">删除习惯</string>
+    <string name="del_habit_fmt">确定删除「%1$s」吗？打卡历史将一并隐藏。</string>
+    <string name="s253cf0">习惯名称（如 喝水）</string>
+    <string name="s0f5c2c">点右上角 + 创建第一个习惯</string>
+    <string name="s584fc5">还没有习惯</string>
+    <string name="s1c6f49">已打卡</string>
+    <string name="s97b8d9">今天还没打卡</string>
+    <string name="see8233">今日已打卡</string>
+    <string name="streak_fmt">连续 %1$d 天</string>
+    <string name="s8d40c5">最长连续</string>
+    <string name="sf0259b">坚持每天</string>
+    <string name="month_year_fmt">%1$d年%2$d月</string>
+    <string name="days_unit">天</string>
+
+    <!-- ============ 音乐 ============ -->
+    <string name="s42ce5d">从曲库选择一首歌</string>
+    <string name="playlist_fmt">歌单 · %1$d 首 · 治愈</string>
+    <string name="s7c2e9a">收起</string>
+    <string name="s579321">上一首</string>
+    <string name="scfd960">下一首</string>
+    <string name="s1d9c70">上一首</string>
+    <string name="sb85270">播放</string>
+    <string name="s8d63ef">暂停</string>
+    <string name="sa2d930">已暂停</string>
+    <string name="sacf254">正在播放</string>
+    <string name="s7e91d9">单曲循环</string>
+    <string name="s700e98">列表循环</string>
+    <string name="s47cab5">定时关闭</string>
+    <string name="sleep_minutes_fmt">%1$d 分钟</string>
+    <string name="sleep_pause_fmt">%1$d 分钟后暂停</string>
+    <string name="s298cbe">音乐播放</string>
+    <string name="splay_failed">播放失败，请检查网络</string>
+    <string name="sfav_added">已喜欢</string>
+    <string name="sfav_removed">已取消喜欢</string>
+    <string name="slyrics_na">歌词暂未上线</string>
+    <string name="music_sync">同步</string>
+    <string name="music_sort_asc">正序</string>
+    <string name="music_sort_desc">逆序</string>
+    <string name="sync_new_fmt">已同步，新增 %1$d 首</string>
+    <string name="sync_uptodate">歌单已是最新</string>
+    <string name="sync_failed">同步失败，请检查网络</string>
+    <string name="music_cover_title">设置封面</string>
+    <string name="music_cover_hint">网易云/QQ音乐歌曲链接或 ID</string>
+    <string name="music_cover_ok">获取</string>
+    <string name="music_cover_bad_input">无法识别歌曲，请输入网易云/QQ音乐链接或网易云数字 ID</string>
+    <string name="music_cover_no_pic">未找到该歌曲的封面</string>
+    <string name="music_cover_updated">封面已更新</string>
+
+    <!-- ============ 相对时间 / 日期 ============ -->
+    <string name="s4181f7">刚刚</string>
+    <string name="rel_minutes_ago">%1$d 分钟前</string>
+    <string name="rel_hours_ago">%1$d 小时前</string>
+    <string name="s2f8d6f">昨天</string>
+    <string name="rel_days_ago">%1$d 天前</string>
+    <string name="date_md">M月d日</string>
+    <!-- 锻炼 -->
+    <string name="wk_overview">概览</string>
+    <string name="wk_habits">习惯</string>
+    <string name="wk_log">记录锻炼</string>
+    <string name="wk_empty_day">这天还没有锻炼记录，点下方按钮记一笔</string>
+    <string name="wk_exercise">项目</string>
+    <string name="wk_duration">时长</string>
+    <string name="wk_intensity">强度</string>
+    <string name="wk_low">低</string>
+    <string name="wk_mid">中</string>
+    <string name="wk_high">高</string>
+    <string name="wk_custom">自定义</string>
+    <string name="wk_name_hint">输入项目名称</string>
+    <string name="wk_delete">删除</string>
+    <string name="wk_min_hint">分钟数</string>
+    <string name="wk_this_month">锻炼时间</string>
+    <string name="wk_best">本月之最</string>
+    <string name="wk_longest">最长运动时间</string>
+    <string name="wk_peak">最高强度</string>
+    <string name="wk_burn">最高耗能</string>
+    <string name="wk_min_fmt">%1$d分钟</string>
+    <string name="wk_kcal_fmt">%1$d千卡</string>
+    <string name="wk_run">跑步</string>
+    <string name="wk_cycling">骑行</string>
+    <string name="wk_swim">游泳</string>
+    <string name="wk_strength">力量训练</string>
+    <string name="wk_yoga">瑜伽</string>
+    <string name="wk_ball">球类运动</string>
+    <string name="wk_stairs">爬楼梯</string>
+    <string name="wk_walk">散步</string>
+    <!-- 期待（倒计时） -->
+    <string name="sx_entry">期待</string>
+    <string name="sx_exp_sub">每一件值得等待的小事</string>
+    <string name="sx_exp_empty">暂无期待</string>
+    <string name="sx_exp_empty_d">添加一个目标日期，倒数每一天</string>
+    <string name="sx_add">添加期待</string>
+    <string name="sx_edit_title">编辑期待</string>
+    <string name="sx_name">名称</string>
+    <string name="sx_name_hint">给这份期待起个名字</string>
+    <string name="sx_emoji">图标</string>
+    <string name="sx_cat">分类</string>
+    <string name="sx_cat_festival">节日</string>
+    <string name="sx_cat_life">生活</string>
+    <string name="sx_target">目标日期</string>
+    <string name="sx_count">倒计时</string>
+    <string name="sx_date">日期</string>
+    <string name="sx_y">年</string>
+    <string name="sx_m">月</string>
+    <string name="sx_d">日</string>
+    <string name="sx_still">还有</string>
+    <string name="sx_days">天</string>
+    <string name="sx_passed">已过</string>
+    <string name="sx_days_ago">天前</string>
+    <string name="sx_today">就是今天</string>
+    <string name="sx_cancel">取消</string>
+    <string name="sx_f01">元旦</string>
+    <string name="sx_f02">情人节</string>
+    <string name="sx_f03">妇女节</string>
+    <string name="sx_f04">520</string>
+    <string name="sx_f05">儿童节</string>
+    <string name="sx_f06">建军节</string>
+    <string name="sx_f07">教师节</string>
+    <string name="sx_f08">国庆节</string>
+    <string name="sx_f09">万圣夜</string>
+    <string name="sx_f10">平安夜</string>
+    <string name="sx_f11">圣诞节</string>
+    <string name="sx_f12">跨年夜</string>
+    <string name="sx_author">作者</string>
+    <!-- 运动统计 -->
+    <string name="sx_stats">统计</string>
+    <string name="sx_p_w">周</string>
+    <string name="sx_p_m">月</string>
+    <string name="sx_p_y">年</string>
+    <string name="sx_wk_empty">暂无记录</string>
+    <string name="sx_wk_empty_d">开始你的第一次锻炼吧</string>
+    <string name="sx_total_cnt">运动次数</string>
+    <string name="sx_total_min">总分钟</string>
+    <string name="sx_chart_title">运动趋势</string>
+    <string name="s4d8e2a">细</string>
+    <string name="s7c1b9f">粗</string>
+    <string name="s9a4c7e">字体大小</string>
+    <string name="s3f8b2d">较小</string>
+    <string name="s5e1d9c">较大</string>
+    <!-- 首页欢迎词自定义 -->
+    <string name="greeting_edit_title">自定义欢迎词</string>
+    <string name="greeting_hint">输入欢迎词，留空恢复默认</string>
+    <!-- 添加音乐（对标网页端弹窗） -->
+    <string name="music_add_title">添加音乐</string>
+    <string name="music_add_close">关闭</string>
+    <string name="music_add_mode_id">音乐 id 解析</string>
+    <string name="music_add_mode_file">上传音源文件</string>
+    <string name="music_add_id_label">网易云音乐 ID</string>
+    <string name="music_add_id_hint">歌曲 id 或完整链接，如 https://music.163.com/song?id=2707652860</string>
+    <string name="music_add_resolve">解析</string>
+    <string name="music_add_file_pick">点击选择音频文件（mp3 / m4a / flac ...）</string>
+    <string name="music_add_title_label">音乐名称 *</string>
+    <string name="music_add_title_hint">歌曲名称</string>
+    <string name="music_add_artist_label">歌手名称 *</string>
+    <string name="music_add_artist_hint">歌手</string>
+    <string name="music_add_submit">添加到歌单</string>
+    <string name="music_add_foot">提交后自动 push 到 GitHub 并触发部署，新歌稍后自动上线</string>
+    <string name="music_add_done">已提交到仓库</string>
+    <string name="music_add_lyrics_fmt">已自动匹配 %1$d 行歌词</string>
+    <string name="music_add_no_lyrics">未匹配到歌词，可后续手动补充</string>
+    <string name="music_add_deploy_hint">GitHub Actions 部署完成后即可播放（约 1-2 分钟）</string>
+    <string name="music_add_resolved_fmt">解析成功：%1$s - %2$s，音源已就绪（%3$sMB）。可修改信息后添加。</string>
+    <string name="music_add_file_fmt">%1$s（%2$sMB）</string>
+    <string name="music_add_phase_resolving">解析歌曲信息...</string>
+    <string name="music_add_phase_downloading">下载音源中（可能需要一段时间）...</string>
+    <string name="music_add_phase_lyrics">匹配歌词中...</string>
+    <string name="music_add_phase_uploading">提交到 GitHub 中...</string>
+    <string name="music_add_err_generic">操作失败，请稍后重试</string>
+    <string name="music_add_err_need_id">请先输入音乐 id</string>
+    <string name="music_add_err_need_resolve">请先点击「解析」获取歌曲信息和音源</string>
+    <string name="music_add_err_need_file">请选择音源文件</string>
+    <string name="music_add_err_need_meta">请填写音乐名称和歌手名称</string>
+    <string name="music_add_err_need_title">请先填写歌曲名称</string>
+    <string name="music_add_err_too_large">音源文件超过 60MB，超出 GitHub 提交限制</string>
+    <string name="music_add_err_artist_page">这是歌手主页链接，请打开具体歌曲页面，复制歌曲链接或分享链接后再试</string>
+    <string name="music_add_err_album_page">这是专辑页面链接，请打开具体歌曲页面，复制歌曲链接或分享链接后再试</string>
+    <string name="music_add_err_playlist_page">这是歌单页面链接，请打开具体歌曲页面，复制歌曲链接或分享链接后再试</string>
+    <string name="music_add_err_bad_link">无法从该链接中识别歌曲 id，请粘贴歌曲页面链接或直接输入数字 id</string>
+    <string name="music_add_err_need_id_raw">请输入数字歌曲 id 或歌曲链接</string>
+    <string name="music_add_err_meting_conn">解析服务连接失败，请稍后重试或改用「上传音源文件」</string>
+    <string name="music_add_err_meting_body">解析服务返回异常，可更换解析实例或改用「上传音源文件」</string>
+    <string name="music_add_err_no_song">未解析到该歌曲（id 不存在或音源受版权保护），可改用「上传音源文件」</string>
+    <string name="music_add_err_download_fmt">音源下载失败（%1$s），可能受版权保护，请手动下载后用「上传音源文件」添加</string>
+    <string name="music_add_err_not_audio">返回内容不是有效音源</string>
+    <string name="music_add_err_too_large_remote">音源超过 60MB，超出 GitHub 提交限制</string>
+    <string name="music_add_err_no_token">未配置 GitHub Token，无法提交</string>
+    <string name="music_add_err_bad_id">歌曲 id 无效</string>
+    <string name="music_add_err_dup">歌单中已存在相同 id 的歌曲</string>
+    <string name="music_add_err_gh_fmt">提交到 GitHub 失败：%1$s</string>
+    <string name="music_add_err_gh_read_fmt">读取仓库文件失败（HTTP %1$d）</string>
+    <string name="music_add_err_lyrics_conn">歌词服务连接失败</string>
+    <string name="music_add_err_no_lyrics">该歌曲暂无歌词</string>
+    <string name="music_add_err_search_no_lyrics">未匹配到歌词</string>
+    <string name="music_add_err_read_file">文件读取失败</string>
+</resources>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 系统媒体卡 CustomAction 图标：细线空心爱心（未喜欢），形状对齐 HyperOS 锁屏媒体卡样式 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF1C1B1F"
+        android:strokeWidth="1.1"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M12,20.4 L10.62,19.14 C5.66,14.66 2.4,11.7 2.4,8.1 C2.4,5.14 4.74,2.8 7.7,2.8 C9.36,2.8 10.96,3.57 12,4.79 C13.04,3.57 14.64,2.8 16.3,2.8 C19.26,2.8 21.6,5.14 21.6,8.1 C21.6,11.7 18.34,14.66 13.38,19.14 Z" />
+</vector>
