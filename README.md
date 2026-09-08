@@ -66,6 +66,45 @@
 app/build/outputs/apk/debug/Sisyphus-<versionName>.apk
 ```
 
+## 音乐上传 Token 配置
+
+音乐上传功能通过 GitHub Contents API 将音源和歌单提交到网站仓库（`EthanWangHaven.github.io`），需要一个有 `repo` 权限的 GitHub Personal Access Token。
+
+> **安全提示**：Token 绝不应硬编码在源码中。项目已移除硬编码 token，改为通过 BuildConfig 从 Gradle 属性注入。
+
+### 配置步骤
+
+1. **创建 GitHub Token**
+
+   - 打开 [GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)](https://github.com/settings/tokens)
+   - 点击「Generate new token (classic)」
+   - 勾选 `repo` 权限（Full control of private repositories）
+   - 生成后复制 token（格式 `ghp_xxxx...`）
+
+2. **注入 Token 到构建**
+
+   在项目根目录的 `gradle.properties`（或 `~/.gradle/gradle.properties`）中添加：
+
+   ```properties
+   GH_TOKEN=ghp_你的实际token
+   ```
+
+   构建时 Gradle 会读取此属性，通过 `buildConfigField` 注入到 `BuildConfig.GH_TOKEN`，运行时 `MusicUploader` 从 `BuildConfig.GH_TOKEN` 获取。
+
+3. **确认 `.gitignore` 已排除 `gradle.properties`**
+
+   项目根目录的 `gradle.properties` 通常已被 `.gitignore` 排除（包含 SDK 路径等本地配置）。确保你的 token 不会被提交：
+
+   ```bash
+   grep gradle.properties .gitignore
+   ```
+
+   如果没有排除，在 `.gitignore` 中添加 `gradle.properties`。
+
+4. **验证**
+
+   构建并安装后，进入音乐页尝试添加歌曲。如果 token 未配置，上传时会提示「未配置 GitHub Token」错误。配置正确则可正常上传音源和更新歌单。
+
 ## 项目结构
 
 ```

@@ -6,6 +6,7 @@ build/
 
 # Local configuration
 local.properties
+gradle.properties
 
 # Temporary files
 临时文件/

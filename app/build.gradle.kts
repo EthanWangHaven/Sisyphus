@@ -37,6 +37,9 @@ android {
         versionCode = buildCount
         versionName = "2.0.$buildCount"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // 音乐上传 GitHub Token：从环境变量或 ~/.gradle/gradle.properties 注入，勿硬编码
+        buildConfigField("String", "GH_TOKEN", "\"${project.findProperty("GH_TOKEN") ?: ""}\"")
     }
 
     buildTypes {
@@ -62,6 +65,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {

@@ -2,6 +2,7 @@ package cn.wangce.lumi.music
 
 import android.content.Context
 import android.util.Base64
+import cn.wangce.lumi.BuildConfig
 import cn.wangce.lumi.R
 import java.net.HttpURLConnection
 import java.net.URL
@@ -20,8 +21,8 @@ import org.json.JSONObject
 
 object MusicUploader {
 
-    // 与网页端构建注入的 NEXT_PUBLIC_GH_TOKEN 同源（个人 debug 应用，安全级别与网页前端内联一致）
-    private const val GH_TOKEN = "" // 从 BuildConfig 或环境变量注入，勿硬编码
+    // 从 BuildConfig 注入（build.gradle.kts 的 buildConfigField，源自 gradle.properties 的 GH_TOKEN）
+    private val GH_TOKEN get() = BuildConfig.GH_TOKEN
     private const val GH_OWNER = "EthanWangHaven"
     private const val GH_REPO = "EthanWangHaven.github.io"
     private const val GH_BRANCH = "main"
