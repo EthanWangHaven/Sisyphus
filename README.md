@@ -1,4 +1,8 @@
-# Sisyphus 
+<p align="center">
+  <img src="app/src/main/res/ic_launcher.svg" width="120" height="120" alt="Sisyphus App Icon"/>
+</p>
+
+# Sisyphus / Lumi
 
 一款个人生活管理 Android 应用，集成专注计时、习惯打卡、笔记、瞬间记录、任务待办、健身记录、音乐播放等功能。
 
