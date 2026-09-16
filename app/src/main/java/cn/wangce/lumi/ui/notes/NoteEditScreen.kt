@@ -474,7 +474,7 @@ private fun NoteAddImageButton(
     val shadowColor = if (dark) ShadowDark else ShadowLight
     Box(
         modifier = modifier
-            .padding(top = 2.dp, end = 2.dp)
+            .padding(top = 62.dp, end = 2.dp)
             .size(48.dp)
             .shadow(3.dp, CircleShape, ambientColor = shadowColor, spotColor = shadowColor)
             .clip(CircleShape)

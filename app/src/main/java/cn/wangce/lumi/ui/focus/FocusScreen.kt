@@ -148,6 +148,12 @@ fun FocusScreen(
                 elapsedSec = elapsedSec,
                 onFinish = viewModel::finish,
                 onAbandon = viewModel::abandon,
+                // 计时上方标签：撸宠/吸烟计时中可点击重新进入互动页（计时后台继续）
+                onOpenFixed = when (category) {
+                    "撸宠" -> onOpenPet
+                    "吸烟" -> onOpenSmoke
+                    else -> null
+                },
             )
             else -> IdleView(
                 category = category,
@@ -295,6 +301,7 @@ private fun RunningView(
     elapsedSec: Int,
     onFinish: () -> Unit,
     onAbandon: () -> Unit,
+    onOpenFixed: (() -> Unit)? = null,
 ) {
     val dark = LocalDarkTheme.current
     Column(
@@ -306,6 +313,8 @@ private fun RunningView(
             text = categoryLabel(category),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            // 固定功能（撸宠/吸烟）：点击标签重新进入互动页
+            modifier = onOpenFixed?.let { Modifier.clickable(onClick = it) } ?: Modifier,
         )
         Spacer(Modifier.weight(1f))
 

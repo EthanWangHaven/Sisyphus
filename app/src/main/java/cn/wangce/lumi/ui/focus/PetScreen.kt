@@ -1,5 +1,12 @@
 package cn.wangce.lumi.ui.focus
 
+import android.graphics.ImageDecoder
+import android.graphics.drawable.Animatable2
+import android.graphics.drawable.AnimatedImageDrawable
+import android.graphics.drawable.Drawable
+import android.media.MediaPlayer
+import android.os.Build
+import android.widget.ImageView
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.Spring
@@ -32,6 +39,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -40,6 +48,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,11 +62,13 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cn.wangce.lumi.R
@@ -67,22 +78,7 @@ import cn.wangce.lumi.ui.theme.PillBgDark
 import cn.wangce.lumi.ui.theme.PillBgLight
 import cn.wangce.lumi.ui.theme.ShadowDark
 import cn.wangce.lumi.ui.theme.ShadowLight
-import dev.romainguy.kotlin.math.Float3
-import io.github.sceneview.Scene
-import io.github.sceneview.math.Position
-import io.github.sceneview.node.ModelNode
-import io.github.sceneview.rememberCameraManipulator
-import io.github.sceneview.rememberCameraNode
-import io.github.sceneview.rememberCollisionSystem
-import io.github.sceneview.rememberEngine
-import io.github.sceneview.rememberEnvironmentLoader
-import io.github.sceneview.rememberMainLightNode
-import io.github.sceneview.rememberMaterialLoader
-import io.github.sceneview.rememberModelLoader
-import io.github.sceneview.rememberNodes
-import io.github.sceneview.rememberRenderer
-import io.github.sceneview.rememberScene
-import io.github.sceneview.rememberView
+import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -90,7 +86,7 @@ import kotlinx.coroutines.launch
 private data class Heart(val id: Int, val x: Float, val y: Float, val born: Long)
 private val HeartPink = Color(0xFFF28B82)
 
-// 赛博撸宠：3D 模型宠物（猫/狗）+ 滑动撸（爱心）、喂食、换宠物
+// 赛博撸宠：实拍绿幕序列帧宠物（猫/狗）+ 滑动撸（爱心）、喂食、换宠物
 @Composable
 fun PetScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit) {
     val dark = LocalDarkTheme.current
@@ -111,16 +107,26 @@ fun PetScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit) {
     val haptic = LocalHapticFeedback.current
     val appearScale = remember { Animatable(1f) }
 
-    // 3D 引擎
-    val engine = rememberEngine()
-    val modelLoader = rememberModelLoader(engine)
-    val materialLoader = rememberMaterialLoader(engine)
-    val environmentLoader = rememberEnvironmentLoader(engine)
-    val view = rememberView(engine)
-    val renderer = rememberRenderer(engine)
-    val scene = rememberScene(engine)
-    val collisionSystem = rememberCollisionSystem(view)
-    val childNodes = rememberNodes()
+    // 撸动时的猫咕噜声（循环播放；素材取自 cat_pet_sim，ISC 协议，github.com/darkgumby/cat_pet_sim）
+    // purring 直接跟随拖拽手势，与 mood 解耦（mood 0.9s 自动回 idle 会在中途断音）
+    var purring by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val purrPlayer = remember {
+        MediaPlayer.create(context, R.raw.cat_purring)?.apply {
+            isLooping = true
+            setVolume(0.35f, 0.35f)
+        }
+    }
+    LaunchedEffect(purring) {
+        if (purring) purrPlayer?.start()
+        else {
+            purrPlayer?.pause()
+            purrPlayer?.seekTo(0)
+        }
+    }
+    DisposableEffect(Unit) {
+        onDispose { purrPlayer?.release() }
+    }
 
     // 撸动结束 0.9s 后回到待机
     LaunchedEffect(mood) {
@@ -133,27 +139,48 @@ fun PetScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit) {
         }
     }
 
-    // 加载 3D 模型：切换宠物时触发
-    LaunchedEffect(kind) {
-        childNodes.clear()
-        val modelPath = if (kind == 0) "models/cat.glb" else "models/shiba_inu.glb"
-        modelLoader.loadModelInstanceAsync(modelPath, { it }) { instance ->
-            instance?.let {
-                val node = ModelNode(
-                    modelInstance = it,
-                    autoAnimate = true,
-                    scaleToUnits = 1.5f,
-                )
-                childNodes.add(node)
-                scope.launch {
-                    appearScale.snapTo(0.72f)
-                    appearScale.animateTo(
-                        1f,
-                        spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
-                    )
+    // 喂食重播序号：eat 播放中再次喂食时强制换源重播
+    var eatSeq by remember { mutableIntStateOf(0) }
+
+    // 当前段动画源：豆包图生视频（同一定妆照保证形象一致）→ 绿幕抠图 → 无缝循环 WebP。
+    // idle/pet 无限循环，eat 单次播放、播完由 AnimatedImageDrawable 回调回 idle。
+    // AnimatedImageDrawable 需 API 28+，26/27 老设备降级为不显示。
+    val petSrc = remember(kind, mood, eatSeq) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+            null
+        } else {
+            val prefix = if (kind == 0) "cat" else "dog"
+            runCatching {
+                // ImageDecoder.createSource 无 InputStream 重载，先落 cacheDir 再按 File 解码
+                val f = File(context.cacheDir, "pet_${prefix}_$mood.webp")
+                if (!f.exists()) {
+                    context.assets.open("pet/${prefix}_$mood.webp").use { input ->
+                        f.outputStream().use { input.copyTo(it) }
+                    }
                 }
+                ImageDecoder.createSource(f)
+            }.getOrElse {
+                // 狗素材未就绪时回退猫
+                runCatching {
+                    val f = File(context.cacheDir, "pet_cat_$mood.webp")
+                    if (!f.exists()) {
+                        context.assets.open("pet/cat_$mood.webp").use { input ->
+                            f.outputStream().use { input.copyTo(it) }
+                        }
+                    }
+                    ImageDecoder.createSource(f)
+                }.getOrNull()
             }
         }
+    }
+
+    // 首次进入 / 换宠弹出动画
+    LaunchedEffect(kind) {
+        appearScale.snapTo(0.72f)
+        appearScale.animateTo(
+            1f,
+            spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        )
     }
 
     Column(
@@ -187,50 +214,74 @@ fun PetScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit) {
 
         Spacer(Modifier.weight(1f))
 
-        // 宠物互动区：3D 模型 + 滑动撸
+        // 宠物互动区：实拍序列帧 + 滑动撸
         Box(
-            modifier = Modifier.size(300.dp)
-                .pointerInput(Unit) {
-                    var lastHeart = 0L
-                    var heartId = 0
-                    detectDragGestures(
-                        onDragStart = { mood = "pet"; haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove) },
-                        onDrag = { change, _ ->
-                            val now = System.currentTimeMillis()
-                            if (now - lastHeart > 90) {
-                                lastHeart = now
-                                hearts.add(Heart(heartId++, change.position.x, change.position.y, now))
-                                if (hearts.size > 24) hearts.removeAt(0)
-                            }
-                        },
-                        onDragEnd = { },
-                        onDragCancel = { },
-                    )
-                },
+            modifier = Modifier.size(300.dp),
             contentAlignment = Alignment.Center,
         ) {
-            // 3D 场景
-            Scene(
+            // 序列帧动画（ImageView + AnimatedImageDrawable）
+            AndroidView(
                 modifier = Modifier.fillMaxSize().scale(appearScale.value),
-                engine = engine,
-                modelLoader = modelLoader,
-                materialLoader = materialLoader,
-                environmentLoader = environmentLoader,
-                view = view,
-                renderer = renderer,
-                scene = scene,
-                collisionSystem = collisionSystem,
-                mainLightNode = rememberMainLightNode(engine) {
-                    intensity = 100_000f
+                factory = { ctx ->
+                    ImageView(ctx).apply { scaleType = ImageView.ScaleType.FIT_CENTER }
                 },
-                cameraNode = rememberCameraNode(engine) {
-                    position = Position(z = 4f)
+                update = { iv ->
+                    if (iv.tag != petSrc) {
+                        iv.tag = petSrc
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && petSrc != null) {
+                            val drawable = ImageDecoder.decodeDrawable(petSrc)
+                            iv.setImageDrawable(drawable)
+                            val anim = drawable as? AnimatedImageDrawable
+                            if (anim != null) {
+                                if (mood == "eat") {
+                                    anim.repeatCount = 0
+                                    // 播完回 idle；回调可能来自渲染线程，post 回主线程写状态
+                                    anim.registerAnimationCallback(object : Animatable2.AnimationCallback() {
+                                        override fun onAnimationEnd(drawable: Drawable) {
+                                            iv.post { mood = "idle" }
+                                        }
+                                    })
+                                } else {
+                                    anim.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE
+                                    anim.clearAnimationCallbacks()
+                                }
+                                anim.start()
+                            }
+                        } else {
+                            iv.setImageDrawable(null)
+                        }
+                    }
                 },
-                cameraManipulator = rememberCameraManipulator(),
-                childNodes = childNodes,
             )
             // 爱心粒子叠加
             Canvas(Modifier.fillMaxSize()) { drawHearts(hearts) }
+            // 手势层：Scene 的 AndroidView 会消费触摸（cameraManipulator=null 只是不处理
+            // 手势，事件仍被 View 层拦截），手势必须覆盖在 Scene 之上才能收到。
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        var lastHeart = 0L
+                        var heartId = 0
+                        detectDragGestures(
+                            onDragStart = {
+                                mood = "pet"
+                                purring = true
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            },
+                            onDrag = { change, _ ->
+                                val now = System.currentTimeMillis()
+                                if (now - lastHeart > 90) {
+                                    lastHeart = now
+                                    hearts.add(Heart(heartId++, change.position.x, change.position.y, now))
+                                    if (hearts.size > 24) hearts.removeAt(0)
+                                }
+                            },
+                            onDragEnd = { purring = false },
+                            onDragCancel = { purring = false },
+                        )
+                    },
+            )
         }
 
         Text(stringResource(R.string.focus_pet_hint), style = MaterialTheme.typography.labelMedium,
@@ -246,7 +297,8 @@ fun PetScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit) {
                         scope.launch {
                             foodAnim.snapTo(0f)
                             foodAnim.animateTo(1f, tween(850, easing = FastOutLinearInEasing))
-                            mood = "eat"; delay(1300); mood = "idle"; foodAnim.snapTo(1f)
+                            // eat.webp 单次播放，播完由 AnimatedImageDrawable 回调回 idle
+                            mood = "eat"; eatSeq++
                         }
                     }
                 })
@@ -255,6 +307,9 @@ fun PetScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit) {
                 dark, onClick = {
                     scope.launch {
                         appearScale.animateTo(0.72f, tween(160))
+                        // 复位状态：换宠后旧 eat 段 drawable 被替换，其"播完回 idle"回调不会再触发
+                        mood = "idle"
+                        hearts.clear()
                         kind = (kind + 1) % 2
                     }
                 })
