@@ -3,6 +3,8 @@ package cn.wangce.lumi.ui.settings
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +20,7 @@ import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -57,6 +60,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp),
     ) {
         Spacer(Modifier.height(8.dp))
@@ -69,70 +73,61 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
         Spacer(Modifier.height(24.dp))
 
         // 外观：分段选择器（跟随系统/浅色/深色）
-        SectionLabel(text = stringResource(R.string.safcde2))
-        Spacer(Modifier.height(8.dp))
-        SegmentedControl(
-            options = listOf(
-                SegmentedOption(ThemeMode.SYSTEM, stringResource(R.string.s71bbc7), Icons.Filled.BrightnessAuto),
-                SegmentedOption(ThemeMode.LIGHT, stringResource(R.string.s8755e9), Icons.Filled.LightMode),
-                SegmentedOption(ThemeMode.DARK, stringResource(R.string.s18d148), Icons.Filled.DarkMode),
-            ),
-            selected = themeMode,
-            onSelect = viewModel::setThemeMode,
-        )
-
-        Spacer(Modifier.height(24.dp))
+        SettingGroup(label = stringResource(R.string.safcde2)) {
+            SegmentedControl(
+                options = listOf(
+                    SegmentedOption(ThemeMode.SYSTEM, stringResource(R.string.s71bbc7), Icons.Filled.BrightnessAuto),
+                    SegmentedOption(ThemeMode.LIGHT, stringResource(R.string.s8755e9), Icons.Filled.LightMode),
+                    SegmentedOption(ThemeMode.DARK, stringResource(R.string.s18d148), Icons.Filled.DarkMode),
+                ),
+                selected = themeMode,
+                onSelect = viewModel::setThemeMode,
+            )
+        }
 
         // 字体粗细：三档全局调节（细/标准/粗），DataStore 持久化
-        SectionLabel(text = stringResource(R.string.sf8a3c1))
-        Spacer(Modifier.height(8.dp))
-        SegmentedControl(
-            options = listOf(
-                SegmentedOption(-200, stringResource(R.string.s4d8e2a)), // 细
-                SegmentedOption(0, stringResource(R.string.s2b7e9d)),    // 标准
-                SegmentedOption(200, stringResource(R.string.s7c1b9f)),  // 粗
-            ),
-            selected = fontBoost,
-            onSelect = viewModel::setFontBoost,
-        )
-
-        Spacer(Modifier.height(24.dp))
+        SettingGroup(label = stringResource(R.string.sf8a3c1)) {
+            SegmentedControl(
+                options = listOf(
+                    SegmentedOption(-200, stringResource(R.string.s4d8e2a)), // 细
+                    SegmentedOption(0, stringResource(R.string.s2b7e9d)),    // 标准
+                    SegmentedOption(200, stringResource(R.string.s7c1b9f)),  // 粗
+                ),
+                selected = fontBoost,
+                onSelect = viewModel::setFontBoost,
+            )
+        }
 
         // 字体大小：三档全局缩放（较小 80% / 标准 90% / 较大 100%），DataStore 持久化
-        SectionLabel(text = stringResource(R.string.s9a4c7e))
-        Spacer(Modifier.height(8.dp))
-        SegmentedControl(
-            options = listOf(
-                SegmentedOption(80, stringResource(R.string.s3f8b2d)),  // 较小
-                SegmentedOption(90, stringResource(R.string.s2b7e9d)),  // 标准（复用）
-                SegmentedOption(100, stringResource(R.string.s5e1d9c)), // 较大
-            ),
-            selected = fontScale,
-            onSelect = viewModel::setFontScale,
-        )
-
-        Spacer(Modifier.height(24.dp))
+        SettingGroup(label = stringResource(R.string.s9a4c7e)) {
+            SegmentedControl(
+                options = listOf(
+                    SegmentedOption(80, stringResource(R.string.s3f8b2d)),  // 较小
+                    SegmentedOption(90, stringResource(R.string.s2b7e9d)),  // 标准（复用）
+                    SegmentedOption(100, stringResource(R.string.s5e1d9c)), // 较大
+                ),
+                selected = fontScale,
+                onSelect = viewModel::setFontScale,
+            )
+        }
 
         // 语言：分段选择器；中/英文项按自身语言固定显示
-        SectionLabel(text = stringResource(R.string.language))
-        Spacer(Modifier.height(8.dp))
-        SegmentedControl(
-            options = listOf(
-                SegmentedOption(AppLanguage.SYSTEM, stringResource(R.string.s71bbc7)),
-                SegmentedOption(AppLanguage.ZH, "中文"),
-                SegmentedOption(AppLanguage.EN, "English"),
-            ),
-            selected = language,
-            onSelect = {
-                viewModel.setLanguage(it)
-                activity?.recreate()
-            },
-        )
-
-        Spacer(Modifier.height(24.dp))
+        SettingGroup(label = stringResource(R.string.language)) {
+            SegmentedControl(
+                options = listOf(
+                    SegmentedOption(AppLanguage.SYSTEM, stringResource(R.string.s71bbc7)),
+                    SegmentedOption(AppLanguage.ZH, "中文"),
+                    SegmentedOption(AppLanguage.EN, "English"),
+                ),
+                selected = language,
+                onSelect = {
+                    viewModel.setLanguage(it)
+                    activity?.recreate()
+                },
+            )
+        }
 
         SectionLabel(text = stringResource(R.string.sx_author))
-        Spacer(Modifier.height(8.dp))
         GlassCard(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier
@@ -178,10 +173,9 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             }
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(28.dp))
 
         SectionLabel(text = stringResource(R.string.s81d9f5))
-        Spacer(Modifier.height(8.dp))
         GlassCard(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier
@@ -189,6 +183,13 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
                     .padding(16.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Outlined.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(10.dp))
                     Text(
                         text = "Sisyphus",
                         style = MaterialTheme.typography.bodyMedium,
@@ -222,10 +223,21 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
 private fun SectionLabel(text: String) {
     Text(
         text = text,
-        style = MaterialTheme.typography.bodyMedium,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Medium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 4.dp),
+        modifier = Modifier.padding(start = 4.dp, bottom = 10.dp),
     )
+}
+
+// 设置分组：统一「小号灰标签 + 控件」的节奏，替代原先散落的 SectionLabel + Spacer 组合
+@Composable
+private fun SettingGroup(label: String, content: @Composable () -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        SectionLabel(text = label)
+        content()
+    }
+    Spacer(Modifier.height(28.dp))
 }
 
 // 从 PackageManager 读取 versionName，读不到时兜底

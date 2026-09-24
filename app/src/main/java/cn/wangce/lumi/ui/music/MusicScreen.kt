@@ -33,7 +33,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -48,7 +47,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -58,18 +56,12 @@ import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.RepeatOne
 import androidx.compose.material.icons.outlined.Timer
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -108,7 +100,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -117,18 +108,30 @@ import cn.wangce.lumi.music.MusicUiState
 import cn.wangce.lumi.music.MusicUploader
 import cn.wangce.lumi.music.RepeatMode
 import cn.wangce.lumi.music.Track
+import cn.wangce.lumi.ui.components.AppFab
+import cn.wangce.lumi.ui.components.AppTextField
+import cn.wangce.lumi.ui.components.GlassIconButton
+import cn.wangce.lumi.ui.components.LiquidGlassSurface
+import cn.wangce.lumi.ui.components.LumiDialog
+import cn.wangce.lumi.ui.components.LumiDialogButtons
+import cn.wangce.lumi.ui.components.PrimaryPillButton
+import cn.wangce.lumi.ui.components.SecondaryButton
+import cn.wangce.lumi.ui.theme.AccentInk
+import cn.wangce.lumi.ui.theme.AccentPaper
 import cn.wangce.lumi.ui.theme.DarkGradientBottom
 import cn.wangce.lumi.ui.theme.DarkGradientMid
 import cn.wangce.lumi.ui.theme.DarkGradientTop
 import cn.wangce.lumi.ui.theme.DurState
+import cn.wangce.lumi.ui.theme.LiquidGlassRimDark
+import cn.wangce.lumi.ui.theme.LiquidGlassRimLight
+import cn.wangce.lumi.ui.theme.LiquidGlassTintDark
+import cn.wangce.lumi.ui.theme.LiquidGlassTintLight
 import cn.wangce.lumi.ui.theme.LocalDarkTheme
 import cn.wangce.lumi.ui.theme.ShadowDark
 import cn.wangce.lumi.ui.theme.ShadowLight
 import cn.wangce.lumi.ui.theme.LightGradientBottom
 import cn.wangce.lumi.ui.theme.LightGradientMid
 import cn.wangce.lumi.ui.theme.LightGradientTop
-import cn.wangce.lumi.ui.theme.PillBgDark
-import cn.wangce.lumi.ui.theme.PillBgLight
 import kotlinx.coroutines.delay
 
 // 每首固定一档灰阶点缀色（封面兜底渐变 / 高亮，对标黑白参考）
@@ -188,11 +191,12 @@ fun MusicScreen(
         ) {
             Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) {
+                GlassIconButton(onClick = onBack) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = stringResource(R.string.s5f4112),
                         tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(22.dp),
                     )
                 }
                 Spacer(Modifier.width(4.dp))
@@ -267,35 +271,19 @@ fun MusicScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(50))
-                        .background(if (dark) PillBgDark else PillBgLight)
-                        .clickable { viewModel.togglePlayPause() }
-                        .padding(horizontal = 24.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (state.isBuffering) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.surface,
-                        )
-                    } else {
+                PrimaryPillButton(
+                    text = if (state.isPlaying) stringResource(R.string.s8d63ef) else stringResource(R.string.sb85270),
+                    onClick = { viewModel.togglePlayPause() },
+                    loading = state.isBuffering,
+                    leading = {
                         Icon(
                             imageVector = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.surface,
-                            modifier = Modifier.size(20.dp),
+                            tint = LocalContentColor.current,
+                            modifier = Modifier.size(18.dp),
                         )
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = if (state.isPlaying) stringResource(R.string.s8d63ef) else stringResource(R.string.sb85270),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.surface,
-                    )
-                }
+                    },
+                )
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
@@ -322,7 +310,7 @@ fun MusicScreen(
                         imageVector = Icons.Outlined.Timer,
                         contentDescription = stringResource(R.string.s47cab5),
                         tint = if (state.sleepMinutes > 0) {
-                            MaterialTheme.colorScheme.primary
+                            MaterialTheme.colorScheme.onSurface
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         },
@@ -333,7 +321,7 @@ fun MusicScreen(
                         Text(
                             text = stringResource(R.string.sleep_minutes_fmt, state.sleepMinutes),
                             style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 }
@@ -402,6 +390,15 @@ fun MusicScreen(
                         .padding(horizontal = 8.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    // 当前播放指示：左侧品牌蓝竖条（钱迹同思路）
+                    Box(
+                        modifier = Modifier
+                            .width(3.dp)
+                            .height(30.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(if (isCurrent) MaterialTheme.colorScheme.onSurface else Color.Transparent),
+                    )
+                    Spacer(Modifier.width(9.dp))
                     CoverImage(
                         track = track,
                         accent = accentFor(index),
@@ -417,7 +414,7 @@ fun MusicScreen(
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = if (isCurrent) FontWeight.SemiBold else null,
                             color = if (isCurrent) {
-                                MaterialTheme.colorScheme.primary
+                                MaterialTheme.colorScheme.onSurface
                             } else {
                                 MaterialTheme.colorScheme.onSurface
                             },
@@ -443,41 +440,31 @@ fun MusicScreen(
 
         // ── 底部迷你播放条 ─────────────────────────────────────────
         current?.let { c ->
-            // 迷你条磨砂玻璃：录制导航内容 backdrop 高斯模糊 + 半透明底 + 细描边（API 31+，同 BottomNavBar）
-            var pillBounds by remember { mutableStateOf(Rect.Zero) }
-            var pillSize by remember { mutableStateOf(IntSize.Zero) }
-            val pillBlurLayer = rememberGraphicsLayer()
+            // 迷你条液态玻璃：背板高斯模糊 + 边缘折射 + 镜面描边（与 BottomNavBar 同材质）
             val pillShape = RoundedCornerShape(percent = 50)
             val pillShadow = if (dark) ShadowDark else ShadowLight
-            Row(
+            LiquidGlassSurface(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
                     .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
                     .fillMaxWidth()
-                    .onGloballyPositioned {
-                        pillBounds = it.boundsInRoot()
-                        pillSize = it.size
-                    }
                     .shadow(6.dp, pillShape, ambientColor = pillShadow, spotColor = pillShadow)
-                    .clip(pillShape)
-                    .drawBehind {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            pillBlurLayer.record(pillSize) {
-                                translate(-pillBounds.left, -pillBounds.top) {
-                                    drawLayer(listLayer)
-                                }
-                            }
-                            pillBlurLayer.renderEffect = BlurEffect(24f, 24f, TileMode.Decal)
-                            drawLayer(pillBlurLayer)
-                        }
-                    }
-                    .background(if (dark) Color(0x991F1F1F) else Color(0x99FFFFFF))
-                    .border(1.dp, MaterialTheme.colorScheme.outline, pillShape)
-                    .clickable { showPlayer = true }
-                    .padding(horizontal = 14.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .clickable { showPlayer = true },
+                backdrop = listLayer,
+                cornerRadius = 38.dp,
+                blur = 20f,
+                refraction = 10.dp,
+                chromatic = 0.05f,
+                tint = if (dark) LiquidGlassTintDark else LiquidGlassTintLight,
+                rimTint = if (dark) LiquidGlassRimDark else LiquidGlassRimLight,
             ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                 CoverImage(
                     track = c,
                     accent = accentFor(state.currentIndex),
@@ -520,21 +507,26 @@ fun MusicScreen(
                 Box(
                     modifier = Modifier
                         .size(44.dp)
-                        .background(MaterialTheme.colorScheme.tertiary, CircleShape)
-                        .clickable { viewModel.togglePlayPause() },
+                        // 先 clip 成圆再 clickable：否则按压涟漪按矩形节点绘制，浅色下会露出方形灰块
+                        .clip(CircleShape)
+                        .background(if (dark) AccentPaper else AccentInk)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { viewModel.togglePlayPause() },
                     contentAlignment = Alignment.Center,
                 ) {
                     if (state.isBuffering) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(22.dp),
                             strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onTertiary,
+                            color = if (dark) AccentInk else Color.White,
                         )
                     } else {
                         Icon(
                             imageVector = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                             contentDescription = if (state.isPlaying) stringResource(R.string.s8d63ef) else stringResource(R.string.sb85270),
-                            tint = MaterialTheme.colorScheme.onTertiary,
+                            tint = if (dark) AccentInk else Color.White,
                             modifier = Modifier.size(24.dp),
                         )
                     }
@@ -554,6 +546,7 @@ fun MusicScreen(
                         modifier = Modifier.size(22.dp),
                     )
                 }
+            }
             }
         }
 
@@ -682,11 +675,12 @@ private fun NowPlayingPanel(
         Spacer(Modifier.height(8.dp))
         // 顶栏：收起 + 标题
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onClose) {
+            GlassIconButton(onClick = onClose) {
                 Icon(
                     imageVector = Icons.Filled.ExpandMore,
                     contentDescription = stringResource(R.string.s7c2e9a),
                     tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(22.dp),
                 )
             }
             Text(
@@ -714,7 +708,7 @@ private fun NowPlayingPanel(
                     .align(Alignment.CenterHorizontally)
                     .fillMaxWidth(0.85f)
                     .aspectRatio(1f)
-                    .shadow(16.dp, RoundedCornerShape(16.dp))
+                    .shadow(16.dp, RoundedCornerShape(28.dp))
                     // 长按封面：输入网易云链接/ID 获取封面图
                     .pointerInput(current.url) {
                         detectTapGestures(onLongPress = { showCoverDialog = true })
@@ -797,66 +791,63 @@ private fun NowPlayingPanel(
             IconButton(onClick = {
                 val next = when (state.sleepMinutes) { 0 -> 30; 30 -> 60; else -> 0 }
                 onSetSleep(next)
-            }, modifier = Modifier.size(48.dp)) {
+            }, modifier = Modifier.size(52.dp)) {
                 Icon(
                     imageVector = Icons.Outlined.Timer,
                     contentDescription = stringResource(R.string.s47cab5),
                     tint = if (state.sleepMinutes > 0) {
-                        MaterialTheme.colorScheme.primary
+                        MaterialTheme.colorScheme.onSurface
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
-                    modifier = Modifier.size(22.dp),
+                    modifier = Modifier.size(24.dp),
                 )
             }
-            IconButton(onClick = onPrev, modifier = Modifier.size(56.dp)) {
+            IconButton(onClick = onPrev, modifier = Modifier.size(64.dp)) {
                 Icon(
                     imageVector = Icons.Filled.SkipPrevious,
                     contentDescription = stringResource(R.string.s579321),
                     tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(40.dp),
                 )
             }
-            FilledIconButton(
+            AppFab(
                 onClick = onToggle,
-                modifier = Modifier.size(76.dp),
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = if (dark) PillBgDark else PillBgLight,
-                    contentColor = MaterialTheme.colorScheme.surface,
-                ),
+                size = 76.dp,
             ) {
                 if (state.isBuffering) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(34.dp),
                         strokeWidth = 3.dp,
-                        color = MaterialTheme.colorScheme.surface,
+                        color = LocalContentColor.current,
                     )
                 } else {
                     Icon(
                         imageVector = if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                         contentDescription = if (state.isPlaying) stringResource(R.string.s8d63ef) else stringResource(R.string.sb85270),
+                        tint = LocalContentColor.current,
                         modifier = Modifier.size(38.dp),
                     )
                 }
             }
-            IconButton(onClick = onNext, modifier = Modifier.size(56.dp)) {
+            IconButton(onClick = onNext, modifier = Modifier.size(64.dp)) {
                 Icon(
                     imageVector = Icons.Filled.SkipNext,
                     contentDescription = stringResource(R.string.scfd960),
                     tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(40.dp),
                 )
             }
-            IconButton(onClick = onToggleRepeat, modifier = Modifier.size(48.dp)) {
+            IconButton(onClick = onToggleRepeat, modifier = Modifier.size(52.dp)) {
                 Icon(
                     imageVector = if (state.repeatMode == RepeatMode.ALL) Icons.Outlined.Repeat else Icons.Outlined.RepeatOne,
                     contentDescription = if (state.repeatMode == RepeatMode.ALL) stringResource(R.string.s700e98) else stringResource(R.string.s7e91d9),
                     tint = if (state.repeatMode == RepeatMode.ONE) {
-                        MaterialTheme.colorScheme.primary
+                        MaterialTheme.colorScheme.onSurface
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
-                    modifier = Modifier.size(22.dp),
+                    modifier = Modifier.size(24.dp),
                 )
             }
         }
@@ -866,7 +857,7 @@ private fun NowPlayingPanel(
             Text(
                 text = stringResource(R.string.sleep_pause_fmt, state.sleepMinutes),
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -1021,70 +1012,53 @@ private fun CoverFetchDialog(
     var fetching by remember { mutableStateOf(false) }
     var errorText by remember { mutableStateOf("") }
 
-    Dialog(onDismissRequest = { if (!fetching) onDismiss() }) {
-        Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp,
-        ) {
-            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp)) {
-                Text(
-                    text = stringResource(R.string.music_cover_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = input,
-                    onValueChange = { input = it; errorText = "" },
-                    placeholder = { Text(stringResource(R.string.music_cover_hint)) },
-                    singleLine = true,
+    LumiDialog(
+        onDismissRequest = { if (!fetching) onDismiss() },
+        title = stringResource(R.string.music_cover_title),
+        actions = {
+            LumiDialogButtons {
+                SecondaryButton(
+                    text = stringResource(R.string.s625fb2),
+                    onClick = onDismiss,
                     enabled = !fetching,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.weight(1f),
                 )
-                if (errorText.isNotEmpty()) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = errorText,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-                Spacer(Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TextButton(onClick = onDismiss, enabled = !fetching) {
-                        Text(stringResource(R.string.s625fb2))
-                    }
-                    TextButton(
-                        onClick = {
-                            fetching = true
-                            errorText = ""
-                            onSubmit(input) { ok, message ->
-                                fetching = false
-                                if (ok) {
-                                    onDismiss()
-                                } else {
-                                    errorText = message
-                                }
+                PrimaryPillButton(
+                    text = stringResource(R.string.music_cover_ok),
+                    onClick = {
+                        fetching = true
+                        errorText = ""
+                        onSubmit(input) { ok, message ->
+                            fetching = false
+                            if (ok) {
+                                onDismiss()
+                            } else {
+                                errorText = message
                             }
-                        },
-                        enabled = !fetching && input.isNotBlank(),
-                    ) {
-                        if (fetching) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                            )
-                        } else {
-                            Text(stringResource(R.string.music_cover_ok))
                         }
-                    }
-                }
+                    },
+                    enabled = !fetching && input.isNotBlank(),
+                    loading = fetching,
+                    modifier = Modifier.weight(1f),
+                )
             }
+        },
+    ) {
+        AppTextField(
+            value = input,
+            onValueChange = { input = it; errorText = "" },
+            hint = stringResource(R.string.music_cover_hint),
+            enabled = !fetching,
+            isError = errorText.isNotEmpty(),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (errorText.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = errorText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
         }
     }
 }
@@ -1152,300 +1126,231 @@ private fun MusicAddDialog(
         }
     }
 
-    Dialog(onDismissRequest = { if (!busy) onDismiss() }) {
-        Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp,
-        ) {
-            Column(
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp, vertical = 18.dp),
-            ) {
-                // 标题行 + 关闭
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = stringResource(R.string.music_add_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f),
-                    )
-                    IconButton(onClick = onDismiss, enabled = !busy) {
-                        Icon(
-                            imageVector = Icons.Filled.Close,
-                            contentDescription = stringResource(R.string.music_add_close),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-
-                // 模式切换：选中 primary 底白字，未选中灰底
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ModePill(
-                        text = stringResource(R.string.music_add_mode_id),
-                        selected = mode == "id",
-                        enabled = !busy,
-                        onClick = { mode = "id"; errorText = "" },
-                    )
-                    ModePill(
-                        text = stringResource(R.string.music_add_mode_file),
-                        selected = mode == "file",
-                        enabled = !busy,
-                        onClick = { mode = "file"; errorText = "" },
-                    )
-                }
-                Spacer(Modifier.height(14.dp))
-
-                if (mode == "id") {
-                    Text(
-                        text = stringResource(R.string.music_add_id_label),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    OutlinedTextField(
-                        value = idInput,
-                        onValueChange = { idInput = it; errorText = "" },
-                        placeholder = { Text(stringResource(R.string.music_add_id_hint), style = MaterialTheme.typography.bodySmall) },
-                        singleLine = true,
-                        enabled = !busy && !resolved,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color.Transparent,
-                            unfocusedBorderColor = Color.Transparent,
-                            disabledBorderColor = Color.Transparent,
-                            focusedContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
-                            unfocusedContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
-                            disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
-                        ),
-                        textStyle = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface),
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-                    )
-                    if (!resolved) {
-                        Spacer(Modifier.height(10.dp))
-                        Button(
-                            onClick = {
-                                busy = true
-                                phaseRes = R.string.music_add_phase_resolving
-                                errorText = ""
-                                viewModel.resolveId(
-                                    idInput.trim(),
-                                    onPhase = { phaseRes = it },
-                                ) { ok, msg, t, a ->
-                                    busy = false
-                                    phaseRes = 0
-                                    if (ok) {
-                                        resolved = true
-                                        resolvedNotice = msg
-                                        if (title.isBlank()) title = t
-                                        if (artist.isBlank()) artist = a
-                                    } else {
-                                        errorText = msg
-                                    }
-                                }
-                            },
-                            enabled = !busy && idInput.isNotBlank(),
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            if (busy) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp,
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                )
-                            } else {
-                                Text(stringResource(R.string.music_add_resolve))
-                            }
-                        }
-                    } else {
-                        Spacer(Modifier.height(10.dp))
-                        Text(
-                            text = resolvedNotice,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                } else {
-                    // file 模式：点击选文件
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
-                            .clickable(enabled = !busy) { filePicker.launch(arrayOf("audio/*")) }
-                            .padding(horizontal = 14.dp, vertical = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = fileNotice.ifEmpty { stringResource(R.string.music_add_file_pick) },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (fileNotice.isEmpty()) {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            },
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(14.dp))
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it; errorText = "" },
-                    placeholder = { Text(stringResource(R.string.music_add_title_hint), style = MaterialTheme.typography.bodySmall) },
-                    singleLine = true,
-                    enabled = !busy && !done,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
-                        disabledBorderColor = Color.Transparent,
-                        focusedContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
-                        unfocusedContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
-                        disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
-                    ),
-                    textStyle = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface),
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+    LumiDialog(
+        onDismissRequest = { if (!busy) onDismiss() },
+        title = stringResource(R.string.music_add_title),
+    ) {
+        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+            // 模式切换：选中 primary 底白字，未选中灰底
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ModePill(
+                    text = stringResource(R.string.music_add_mode_id),
+                    selected = mode == "id",
+                    enabled = !busy,
+                    onClick = { mode = "id"; errorText = "" },
                 )
-                Spacer(Modifier.height(10.dp))
-                OutlinedTextField(
-                    value = artist,
-                    onValueChange = { artist = it; errorText = "" },
-                    placeholder = { Text(stringResource(R.string.music_add_artist_hint), style = MaterialTheme.typography.bodySmall) },
-                    singleLine = true,
-                    enabled = !busy && !done,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
-                        disabledBorderColor = Color.Transparent,
-                        focusedContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
-                        unfocusedContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
-                        disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
-                    ),
-                    textStyle = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurface),
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                ModePill(
+                    text = stringResource(R.string.music_add_mode_file),
+                    selected = mode == "file",
+                    enabled = !busy,
+                    onClick = { mode = "file"; errorText = "" },
                 )
+            }
+            Spacer(Modifier.height(14.dp))
 
-                if (errorText.isNotEmpty()) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = errorText,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-
-                Spacer(Modifier.height(16.dp))
-                if (done) {
-                    // 成功态：对勾 + 提示（2.6s 后自动关闭）
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.CheckCircle,
-                            contentDescription = null,
-                            tint = Color(0xFF34A853),
-                            modifier = Modifier.size(48.dp),
-                        )
-                        Spacer(Modifier.height(10.dp))
-                        Text(
-                            text = stringResource(R.string.music_add_done),
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = if (lyricCount > 0) {
-                                stringResource(R.string.music_add_lyrics_fmt, lyricCount)
-                            } else {
-                                stringResource(R.string.music_add_no_lyrics)
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(R.string.music_add_deploy_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                } else {
-                    Button(
+            if (mode == "id") {
+                Text(
+                    text = stringResource(R.string.music_add_id_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(6.dp))
+                AppTextField(
+                    value = idInput,
+                    onValueChange = { idInput = it; errorText = "" },
+                    hint = stringResource(R.string.music_add_id_hint),
+                    enabled = !busy && !resolved,
+                    isError = errorText.isNotEmpty(),
+                    soft = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (!resolved) {
+                    Spacer(Modifier.height(10.dp))
+                    PrimaryPillButton(
+                        text = stringResource(R.string.music_add_resolve),
                         onClick = {
-                            // 校验顺序对齐网页端：元信息 → 音源
-                            val validationError = when {
-                                title.isBlank() || artist.isBlank() -> context.getString(R.string.music_add_err_need_meta)
-                                mode == "id" && !resolved -> context.getString(R.string.music_add_err_need_resolve)
-                                mode == "file" && fileBytes == null -> context.getString(R.string.music_add_err_need_file)
-                                else -> ""
-                            }
-                            if (validationError.isNotEmpty()) {
-                                errorText = validationError
-                            } else {
-                                busy = true
-                                phaseRes = R.string.music_add_phase_lyrics
-                                errorText = ""
-                                viewModel.submitSong(
-                                    if (mode == "id") idInput.trim() else null,
-                                    fileBytes,
-                                    fileExt,
-                                    title.trim(),
-                                    artist.trim(),
-                                    onPhase = { phaseRes = it },
-                                ) { ok, count, errMsg ->
-                                    busy = false
-                                    phaseRes = 0
-                                    if (ok) {
-                                        done = true
-                                        lyricCount = count
-                                    } else {
-                                        errorText = errMsg
-                                    }
+                            busy = true
+                            phaseRes = R.string.music_add_phase_resolving
+                            errorText = ""
+                            viewModel.resolveId(
+                                idInput.trim(),
+                                onPhase = { phaseRes = it },
+                            ) { ok, msg, t, a ->
+                                busy = false
+                                phaseRes = 0
+                                if (ok) {
+                                    resolved = true
+                                    resolvedNotice = msg
+                                    if (title.isBlank()) title = t
+                                    if (artist.isBlank()) artist = a
+                                } else {
+                                    errorText = msg
                                 }
                             }
                         },
-                        enabled = !busy,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        if (busy) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                            )
-                        } else {
-                            Text(stringResource(R.string.music_add_submit))
-                        }
-                    }
-                    if (busy && phaseRes != 0) {
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = stringResource(phaseRes),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                        enabled = !busy && idInput.isNotBlank(),
+                        loading = busy,
+                        fullWidth = true,
+                    )
+                } else {
                     Spacer(Modifier.height(10.dp))
                     Text(
-                        text = stringResource(R.string.music_add_foot),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        text = resolvedNotice,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
+            } else {
+                // file 模式：点击选文件
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
+                        .clickable(enabled = !busy) { filePicker.launch(arrayOf("audio/*")) }
+                        .padding(horizontal = 14.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = fileNotice.ifEmpty { stringResource(R.string.music_add_file_pick) },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (fileNotice.isEmpty()) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+            AppTextField(
+                value = title,
+                onValueChange = { title = it; errorText = "" },
+                hint = stringResource(R.string.music_add_title_hint),
+                enabled = !busy && !done,
+                isError = errorText.isNotEmpty(),
+                soft = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(10.dp))
+            AppTextField(
+                value = artist,
+                onValueChange = { artist = it; errorText = "" },
+                hint = stringResource(R.string.music_add_artist_hint),
+                enabled = !busy && !done,
+                isError = errorText.isNotEmpty(),
+                soft = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            if (errorText.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = errorText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+            if (done) {
+                // 成功态：对勾 + 提示（2.6s 后自动关闭）
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(48.dp),
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        text = stringResource(R.string.music_add_done),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = if (lyricCount > 0) {
+                            stringResource(R.string.music_add_lyrics_fmt, lyricCount)
+                        } else {
+                            stringResource(R.string.music_add_no_lyrics)
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.music_add_deploy_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                PrimaryPillButton(
+                    text = stringResource(R.string.music_add_submit),
+                    onClick = {
+                        // 校验顺序对齐网页端：元信息 → 音源
+                        val validationError = when {
+                            title.isBlank() || artist.isBlank() -> context.getString(R.string.music_add_err_need_meta)
+                            mode == "id" && !resolved -> context.getString(R.string.music_add_err_need_resolve)
+                            mode == "file" && fileBytes == null -> context.getString(R.string.music_add_err_need_file)
+                            else -> ""
+                        }
+                        if (validationError.isNotEmpty()) {
+                            errorText = validationError
+                        } else {
+                            busy = true
+                            phaseRes = R.string.music_add_phase_lyrics
+                            errorText = ""
+                            viewModel.submitSong(
+                                if (mode == "id") idInput.trim() else null,
+                                fileBytes,
+                                fileExt,
+                                title.trim(),
+                                artist.trim(),
+                                onPhase = { phaseRes = it },
+                            ) { ok, count, errMsg ->
+                                busy = false
+                                phaseRes = 0
+                                if (ok) {
+                                    done = true
+                                    lyricCount = count
+                                } else {
+                                    errorText = errMsg
+                                }
+                            }
+                        }
+                    },
+                    enabled = !busy,
+                    loading = busy,
+                    fullWidth = true,
+                )
+                if (busy && phaseRes != 0) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(phaseRes),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = stringResource(R.string.music_add_foot),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                )
             }
         }
     }
 }
 
-// 模式切换胶囊：选中 primary 底白字 / 未选中灰底（同操作胶囊风格）
+// 模式切换胶囊：选中品牌蓝底白字 / 未选中灰底（同操作胶囊风格）
 @Composable
 private fun ModePill(
     text: String,
@@ -1453,12 +1358,13 @@ private fun ModePill(
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
+    val dark = LocalDarkTheme.current
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(50))
             .background(
                 if (selected) {
-                    MaterialTheme.colorScheme.primary
+                    if (dark) AccentPaper else AccentInk
                 } else {
                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)
                 },
@@ -1471,7 +1377,7 @@ private fun ModePill(
             text = text,
             style = MaterialTheme.typography.labelLarge,
             color = if (selected) {
-                MaterialTheme.colorScheme.onPrimary
+                if (dark) AccentInk else Color.White
             } else {
                 MaterialTheme.colorScheme.onSurfaceVariant
             },

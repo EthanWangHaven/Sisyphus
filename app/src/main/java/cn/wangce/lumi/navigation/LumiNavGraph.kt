@@ -29,6 +29,8 @@ import cn.wangce.lumi.ui.notes.NotesScreen
 import cn.wangce.lumi.ui.settings.SettingsScreen
 import cn.wangce.lumi.ui.tasks.TasksScreen
 import cn.wangce.lumi.ui.workout.WorkoutScreen
+import cn.wangce.lumi.ui.theme.LumiAccent
+import cn.wangce.lumi.ui.theme.LumiAccentTheme
 
 // 导航：底部五 Tab（待办/备忘录/专注/期待/锻炼）+ 二级页（备忘录编辑/治愈音乐/习惯打卡）
 @Composable
@@ -60,12 +62,15 @@ fun LumiNavGraph(
                 onNewNote = { navController.navigate(Routes.noteEdit(0L)) },
             )
         }
+        // 瞬间页：黑底回忆风，强调色珊瑚（FAB/保存钮）
         composable(Routes.MOMENTS) {
-            MomentsScreen(
-                onOpenDetail = { momentId, index ->
-                    navController.navigate(Routes.momentDetail(momentId, index))
-                },
-            )
+            LumiAccentTheme(accent = LumiAccent.Coral) {
+                MomentsScreen(
+                    onOpenDetail = { momentId, index ->
+                        navController.navigate(Routes.momentDetail(momentId, index))
+                    },
+                )
+            }
         }
         composable(Routes.FOCUS) {
             FocusScreen(
@@ -120,8 +125,11 @@ fun LumiNavGraph(
         ) {
             PrintScreen(onBack = { navController.popBackStack() })
         }
+        // 期待页：强调色珊瑚（温暖期待感）
         composable(Routes.EXPECTS) {
-            ExpectScreen()
+            LumiAccentTheme(accent = LumiAccent.Coral) {
+                ExpectScreen()
+            }
         }
         // 期待卡片进入页：与打卡页同款自下而上转场，不在 topLevel 故隐藏底部导航栏
         composable(
@@ -137,7 +145,9 @@ fun LumiNavGraph(
                     fadeOut(animationSpec = tween(150))
             },
         ) {
-            ExpectScreen(onBack = { navController.popBackStack() })
+            LumiAccentTheme(accent = LumiAccent.Coral) {
+                ExpectScreen(onBack = { navController.popBackStack() })
+            }
         }
         composable(Routes.SETTINGS) {
             SettingsScreen()
@@ -163,9 +173,12 @@ fun LumiNavGraph(
             CompositionLocalProvider(
                 LocalDensity provides Density(base.density * 0.8f, base.fontScale),
             ) {
-                MusicScreen(
-                    onBack = { navController.popBackStack() },
-                )
+                // 治愈音乐：强调色鼠尾草绿（舒缓自然感）
+                LumiAccentTheme(accent = LumiAccent.Sage) {
+                    MusicScreen(
+                        onBack = { navController.popBackStack() },
+                    )
+                }
             }
         }
         composable(
@@ -181,7 +194,10 @@ fun LumiNavGraph(
                     fadeOut(animationSpec = tween(150))
             },
         ) {
-            HabitsScreen(onBack = { navController.popBackStack() })
+            // 习惯打卡：强调色鼠尾草绿（自然生长感）
+            LumiAccentTheme(accent = LumiAccent.Sage) {
+                HabitsScreen(onBack = { navController.popBackStack() })
+            }
         }
         composable(
             route = Routes.NOTE_EDIT,

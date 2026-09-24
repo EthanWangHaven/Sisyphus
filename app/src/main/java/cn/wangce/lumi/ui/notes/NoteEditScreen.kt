@@ -49,7 +49,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -75,10 +74,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cn.wangce.lumi.R
 import cn.wangce.lumi.data.image.ImageStore
+import cn.wangce.lumi.ui.components.SecondaryButton
 import cn.wangce.lumi.ui.moments.PathImage
+import cn.wangce.lumi.ui.theme.AccentInk
+import cn.wangce.lumi.ui.theme.AccentPaper
 import cn.wangce.lumi.ui.theme.LocalDarkTheme
-import cn.wangce.lumi.ui.theme.PillBgDark
-import cn.wangce.lumi.ui.theme.PillBgLight
 import cn.wangce.lumi.ui.theme.ShadowDark
 import cn.wangce.lumi.ui.theme.ShadowLight
 import kotlinx.coroutines.Dispatchers
@@ -231,13 +231,7 @@ fun NoteEditScreen(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
             )
-            TextButton(onClick = { exitNow() }) {
-                Text(
-                    text = stringResource(R.string.s769d88),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
+            SecondaryButton(text = stringResource(R.string.s769d88), onClick = { exitNow() })
         }
 
         BoxWithConstraints(modifier = Modifier.weight(1f)) {
@@ -266,7 +260,7 @@ fun NoteEditScreen(
                         textStyle = MaterialTheme.typography.headlineMedium.copy(
                             color = MaterialTheme.colorScheme.onSurface,
                         ),
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        cursorBrush = SolidColor(if (dark) AccentPaper else AccentInk),
                         singleLine = true,
                     )
                 }
@@ -315,7 +309,7 @@ fun NoteEditScreen(
                             textStyle = MaterialTheme.typography.bodyMedium.copy(
                                 color = MaterialTheme.colorScheme.onSurface,
                             ),
-                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                            cursorBrush = SolidColor(if (dark) AccentPaper else AccentInk),
                             singleLine = true,
                         )
                     }
@@ -325,13 +319,14 @@ fun NoteEditScreen(
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(existingTags, key = { it }) { suggestion ->
                             val active = tag == suggestion
+                            // 选中 = 墨黑填充（全 App「黑即强调」统一规则）
                             val chipBg = if (active) {
-                                if (dark) PillBgDark else PillBgLight
+                                if (LocalDarkTheme.current) AccentPaper else AccentInk
                             } else {
                                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                             }
                             val chipFg = if (active) {
-                                MaterialTheme.colorScheme.surface
+                                if (LocalDarkTheme.current) AccentInk else Color.White
                             } else {
                                 MaterialTheme.colorScheme.onSurfaceVariant
                             }
@@ -373,7 +368,7 @@ fun NoteEditScreen(
                             color = MaterialTheme.colorScheme.onSurface,
                             lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 0.8f, // 行距减半，光标≈字高（用户要求）
                         ),
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        cursorBrush = SolidColor(if (dark) AccentPaper else AccentInk),
                     )
                 }
 
@@ -474,7 +469,7 @@ private fun NoteAddImageButton(
     val shadowColor = if (dark) ShadowDark else ShadowLight
     Box(
         modifier = modifier
-            .padding(top = 62.dp, end = 2.dp)
+            .padding(top = 110.dp, end = 2.dp)
             .size(48.dp)
             .shadow(3.dp, CircleShape, ambientColor = shadowColor, spotColor = shadowColor)
             .clip(CircleShape)

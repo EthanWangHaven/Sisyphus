@@ -81,7 +81,7 @@ fun <T> SegmentedControl(
                 .shadow(3.dp, segShape, ambientColor = shadowColor, spotColor = shadowColor)
                 .clip(segShape)
                 .background(MaterialTheme.colorScheme.surface)
-                .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f), segShape),
+                .border(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), segShape),
         )
         Row(modifier = Modifier.fillMaxSize()) {
             options.forEach { option ->

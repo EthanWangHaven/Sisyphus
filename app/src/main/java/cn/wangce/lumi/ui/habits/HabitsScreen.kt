@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -67,48 +68,64 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cn.wangce.lumi.R
 import cn.wangce.lumi.data.local.HabitEntity
+import cn.wangce.lumi.ui.components.AppTextField
 import cn.wangce.lumi.ui.components.bottomNavSpace
 import cn.wangce.lumi.ui.components.EmptyState
 import cn.wangce.lumi.ui.components.GlassCard
-import cn.wangce.lumi.ui.theme.DarkGlassBg
-import cn.wangce.lumi.ui.theme.GlassBg
+import cn.wangce.lumi.ui.components.LumiDialog
+import cn.wangce.lumi.ui.components.LumiDialogButtons
+import cn.wangce.lumi.ui.components.PrimaryPillButton
+import cn.wangce.lumi.ui.components.SecondaryButton
+import cn.wangce.lumi.ui.theme.CategoryBlue
+import cn.wangce.lumi.ui.theme.CategoryColor
+import cn.wangce.lumi.ui.theme.CategoryCoral
+import cn.wangce.lumi.ui.theme.CategoryGreen
+import cn.wangce.lumi.ui.theme.CategoryOrange
+import cn.wangce.lumi.ui.theme.CategoryPink
+import cn.wangce.lumi.ui.theme.CategoryPurple
+import cn.wangce.lumi.ui.theme.CategoryTeal
+import cn.wangce.lumi.ui.theme.CategoryYellow
+import cn.wangce.lumi.ui.theme.AccentInk
+import cn.wangce.lumi.ui.theme.AccentPaper
 import cn.wangce.lumi.ui.theme.LocalDarkTheme
-import cn.wangce.lumi.ui.theme.PillBgDark
-import cn.wangce.lumi.ui.theme.PillBgLight
 import java.time.LocalDate
 import kotlinx.coroutines.launch
 
-// 灰阶候选色（新建/编辑习惯标签色，对标黑白参考；图标圆底按亮度自适应字色）
-private val HabitColors = listOf(
-    0xFF1A1A1AL, // 墨黑
-    0xFF3D3D3DL, // 深灰
-    0xFF5A5A5AL, // 中灰
-    0xFF757575L, // 灰
-    0xFF8F8F8FL, // 亮灰
-    0xFFA6A6A6L, // 浅灰
+// pastel 分类色候选（新建/编辑习惯标签色；打卡钮/月历/图标底块均取分类色）
+private val HabitCategories = listOf(
+    CategoryBlue, CategoryGreen, CategoryCoral, CategoryOrange,
+    CategoryYellow, CategoryTeal, CategoryPurple, CategoryPink,
 )
 
-// 旧版马卡龙 habit.color → 灰阶映射（兼容历史习惯数据；新习惯已是灰阶无需映射）
+// 旧版马卡龙 habit.color → pastel 分类映射（兼容历史习惯数据，数据无需迁移）
 private val LegacyHabitColorMap = mapOf(
-    0xFFB4D4FFL to 0xFF1A1A1AL, 0xFFFFD070L to 0xFF3D3D3DL,
-    0xFFB8E6C8L to 0xFF5A5A5AL, 0xFFD4C5E8L to 0xFF757575L,
-    0xFFFFB4B4L to 0xFF8F8F8FL, 0xFFFFD4A8L to 0xFFA6A6A6L,
+    0xFFB4D4FFL to CategoryBlue, 0xFFFFD070L to CategoryYellow,
+    0xFFB8E6C8L to CategoryGreen, 0xFFD4C5E8L to CategoryPurple,
+    0xFFFFB4B4L to CategoryCoral, 0xFFFFD4A8L to CategoryOrange,
 )
 
-private fun habitDisplayColor(color: Long): Long = LegacyHabitColorMap[color] ?: color
+// 存库值 = 分类 fg 的 ARGB（低 32 位）；由值反查分类，旧值走映射，未知兜底第一个
+private fun CategoryColor.storedValue(): Long = fg.toArgb().toLong() and 0xFFFFFFFFL
+
+private fun habitCategory(color: Long): CategoryColor =
+    HabitCategories.firstOrNull { it.storedValue() == color }
+        ?: LegacyHabitColorMap[color]
+        ?: HabitCategories.first()
 
 // 线性矢量图标候选（单色 Outlined 图标；数据库沿用 emoji 字段存 key，兼容旧数据）
 private data class HabitIcon(val key: String, val icon: ImageVector)
@@ -238,6 +255,7 @@ fun HabitsScreen(
                 title = stringResource(R.string.s584fc5),
                 description = stringResource(R.string.s0f5c2c),
                 modifier = Modifier.weight(1f),
+                icon = Icons.Outlined.Eco,
             )
         } else {
             LazyColumn(
@@ -342,7 +360,7 @@ private fun HabitSummaryCard(done: Int, total: Int, bestStreak: Int) {
                         text = stringResource(R.string.days_unit),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 2.dp),
+                        modifier = Modifier.padding(start = 6.dp, bottom = 2.dp),
                     )
                 }
             }
@@ -350,7 +368,8 @@ private fun HabitSummaryCard(done: Int, total: Int, bestStreak: Int) {
     }
 }
 
-// 习惯卡片：emoji 圆底 + 名称/连续天数 + 打卡圆钮；点卡片展开月历，长按删除
+// 习惯卡片：pastel 图标底块 + 标题 / 超大墨色连续天数 + 灰单位 / 今日状态灰字 / 右侧分类色虚线圆打卡钮
+// 点卡片展开月历，长按删除
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HabitCard(
@@ -363,7 +382,8 @@ private fun HabitCard(
     onToggleExpand: () -> Unit,
     onRequestDelete: () -> Unit,
 ) {
-    val base = Color(habitDisplayColor(habit.color))
+    val category = habitCategory(habit.color)
+    val iconBg = if (LocalDarkTheme.current) category.fg.copy(alpha = 0.18f) else category.bg
     Column {
         GlassCard(
             modifier = Modifier
@@ -379,37 +399,53 @@ private fun HabitCard(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(base.copy(alpha = 0.22f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = iconOf(habit.emoji),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
-                Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = habit.name,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(iconBg),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = iconOf(habit.emoji),
+                                contentDescription = null,
+                                tint = category.fg,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            text = habit.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            text = "$streak",
+                            style = MaterialTheme.typography.displaySmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = stringResource(R.string.days_unit),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 6.dp, bottom = 6.dp),
+                        )
+                    }
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        text = if (streak > 0) stringResource(R.string.streak_fmt, streak) else stringResource(R.string.s97b8d9),
+                        text = if (checkedToday) stringResource(R.string.s1c6f49) else stringResource(R.string.s97b8d9),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Spacer(Modifier.width(8.dp))
-                CheckButton(checked = checkedToday, color = base, onToggle = onToggle)
+                Spacer(Modifier.width(12.dp))
+                CheckButton(checked = checkedToday, color = category.fg, onToggle = onToggle)
             }
         }
         AnimatedVisibility(
@@ -421,14 +457,14 @@ private fun HabitCard(
         ) {
             HabitMonthCalendar(
                 checkedDates = checkedDates,
-                color = base,
+                color = category.fg,
                 modifier = Modifier.padding(top = 10.dp),
             )
         }
     }
 }
 
-// 打卡圆钮：打卡态填充习惯色 + 弹跳动画（0.8 → 1 spring）
+// 打卡圆钮：未打卡为分类色虚线圆，打卡后填充分类色；弹跳动画（0.8 → 1 spring）保留
 @Composable
 private fun CheckButton(checked: Boolean, color: Color, onToggle: () -> Unit) {
     val scope = rememberCoroutineScope()
@@ -437,13 +473,6 @@ private fun CheckButton(checked: Boolean, color: Color, onToggle: () -> Unit) {
         modifier = Modifier
             .size(44.dp)
             .scale(bounce.value)
-            .clip(CircleShape)
-            .background(if (checked) color else color.copy(alpha = 0.12f))
-            .border(
-                2.dp,
-                if (checked) color else color.copy(alpha = 0.45f),
-                CircleShape,
-            )
             .clickable {
                 scope.launch {
                     bounce.animateTo(0.8f, spring(stiffness = Spring.StiffnessMedium))
@@ -459,16 +488,29 @@ private fun CheckButton(checked: Boolean, color: Color, onToggle: () -> Unit) {
             },
         contentAlignment = Alignment.Center,
     ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            if (checked) {
+                drawCircle(color = color)
+            } else {
+                drawCircle(
+                    color = color.copy(alpha = 0.8f),
+                    style = Stroke(
+                        width = 2.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 4.dp.toPx())),
+                    ),
+                )
+            }
+        }
         AnimatedVisibility(
             visible = checked,
             enter = scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy)) + fadeIn(),
             exit = scaleOut(spring()) + fadeOut(),
         ) {
-            // 习惯色为灰阶：亮灰配墨勾、深灰配白勾（对比自适应）
+            // 勾图标颜色按填充亮度自适应（极亮 fg 配墨勾，其余白勾）
             Icon(
                 imageVector = Icons.Filled.Check,
                 contentDescription = if (checked) stringResource(R.string.s1c6f49) else stringResource(R.string.scd27ec),
-                tint = if (color.luminance() > 0.5f) Color(0xFF1A1A1A) else Color.White,
+                tint = if (color.luminance() > 0.5f) AccentInk else Color.White,
                 modifier = Modifier.size(22.dp),
             )
         }
@@ -548,7 +590,7 @@ private fun HabitMonthCalendar(
                                         style = MaterialTheme.typography.labelMedium,
                                         color = when {
                                             // 灰阶打卡日：亮灰配墨字、深灰配白字
-                                            isChecked -> if (color.luminance() > 0.5f) Color(0xFF1A1A1A) else Color.White
+                                            isChecked -> if (color.luminance() > 0.5f) AccentInk else Color.White
                                             isToday -> MaterialTheme.colorScheme.onSurface
                                             else -> MaterialTheme.colorScheme.onSurfaceVariant
                                         },
@@ -565,7 +607,7 @@ private fun HabitMonthCalendar(
     }
 }
 
-// 图标候选项：选中主题色描边 + 淡底（单色线性图标）
+// 图标候选项：选中墨色描边 + 淡底（单色线性图标，全 App「黑即强调」）
 @Composable
 private fun IconOption(
     icon: ImageVector,
@@ -573,13 +615,15 @@ private fun IconOption(
     onSelect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val dark = LocalDarkTheme.current
+    val ink = if (dark) AccentPaper else AccentInk
     Box(
         modifier = modifier
             .size(40.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(
                 if (selected) {
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                    ink.copy(alpha = 0.14f)
                 } else {
                     Color.Transparent
                 },
@@ -587,7 +631,7 @@ private fun IconOption(
             .border(
                 1.5.dp,
                 if (selected) {
-                    MaterialTheme.colorScheme.primary
+                    ink
                 } else {
                     Color.Transparent
                 },
@@ -605,14 +649,14 @@ private fun IconOption(
     }
 }
 
-// 颜色候选项：马卡龙圆点，选中深色描边
+// 颜色候选项：pastel 双色圆（bg 底 + fg 内点），选中墨色描边
 @Composable
-private fun ColorOption(colorValue: Long, selected: Boolean, onSelect: () -> Unit) {
+private fun ColorOption(category: CategoryColor, selected: Boolean, onSelect: () -> Unit) {
     Box(
         modifier = Modifier
             .size(36.dp)
             .clip(CircleShape)
-            .background(Color(colorValue))
+            .background(category.bg)
             .then(
                 if (selected) {
                     Modifier.border(
@@ -626,7 +670,14 @@ private fun ColorOption(colorValue: Long, selected: Boolean, onSelect: () -> Uni
             )
             .clickable(onClick = onSelect),
         contentAlignment = Alignment.Center,
-    ) { }
+    ) {
+        Box(
+            modifier = Modifier
+                .size(14.dp)
+                .clip(CircleShape)
+                .background(category.fg),
+        )
+    }
 }
 
 // 新建/编辑习惯弹窗：磨砂半透底 + 名称输入 + emoji/颜色选择
@@ -641,153 +692,78 @@ private fun HabitEditorDialog(
     var iconKey by remember {
         mutableStateOf(existing?.emoji?.let { LegacyEmojiMap[it] ?: it } ?: HabitIcons.first().key)
     }
-    var color by remember { mutableStateOf(habitDisplayColor(existing?.color ?: HabitColors.first())) }
-    val dark = LocalDarkTheme.current
-
-    Dialog(onDismissRequest = onDismiss) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(if (dark) DarkGlassBg else GlassBg)
-                .border(
-                    1.dp,
-                    MaterialTheme.colorScheme.outline,
-                    RoundedCornerShape(16.dp),
+    var color by remember {
+        mutableStateOf(existing?.color?.let(::habitCategory) ?: HabitCategories.first())
+    }
+    LumiDialog(
+        onDismissRequest = onDismiss,
+        title = if (existing == null) stringResource(R.string.s0b1895) else stringResource(R.string.sccf098),
+        actions = {
+            LumiDialogButtons {
+                // 取消：次级按钮
+                SecondaryButton(
+                    text = stringResource(R.string.s625fb2),
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
                 )
-                .padding(24.dp),
-        ) {
-            Column {
-                Text(
-                    text = if (existing == null) stringResource(R.string.s0b1895) else stringResource(R.string.sccf098),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                // 保存：主操作品牌蓝胶囊
+                PrimaryPillButton(
+                    text = stringResource(R.string.sbe5fbb),
+                    onClick = { onSave(name.trim(), iconKey, color.storedValue()) },
+                    enabled = name.isNotBlank(),
+                    modifier = Modifier.weight(1f),
                 )
-                Spacer(Modifier.height(16.dp))
-                // 名称输入：淡底 + 极淡边框（同新建瞬间输入框）
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            if (dark) {
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
-                            } else {
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                            },
-                        )
-                        .border(
-                            1.dp,
-                            MaterialTheme.colorScheme.outline,
-                            RoundedCornerShape(12.dp),
-                        )
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
-                ) {
-                    BasicTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(
-                            color = MaterialTheme.colorScheme.onSurface,
-                        ),
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(
-                            onDone = { if (name.isNotBlank()) onSave(name, iconKey, color) },
-                        ),
-                        decorationBox = { inner ->
-                            Box {
-                                if (name.isEmpty()) {
-                                    Text(
-                                        text = stringResource(R.string.s253cf0),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                inner()
-                            }
-                        },
+            }
+        },
+    ) {
+        // 名称输入：统一走 AppTextField（聚焦墨色描边 + 墨色光标）
+        AppTextField(
+            value = name,
+            onValueChange = { name = it },
+            modifier = Modifier.fillMaxWidth(),
+            hint = stringResource(R.string.s253cf0),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(
+                onDone = { if (name.isNotBlank()) onSave(name, iconKey, color.storedValue()) },
+            ),
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.s5ef69f),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(8.dp))
+        HabitIcons.chunked(6).forEach { rowIcons ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                rowIcons.forEach { candidate ->
+                    IconOption(
+                        icon = candidate.icon,
+                        selected = candidate.key == iconKey,
+                        onSelect = { iconKey = candidate.key },
+                        modifier = Modifier.weight(1f),
                     )
                 }
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    text = stringResource(R.string.s5ef69f),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                repeat(6 - rowIcons.size) { Spacer(Modifier.weight(1f)) }
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+        Text(
+            text = stringResource(R.string.s6b36c6),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HabitCategories.forEach { candidate ->
+                ColorOption(
+                    category = candidate,
+                    selected = candidate == color,
+                    onSelect = { color = candidate },
                 )
-                Spacer(Modifier.height(8.dp))
-                HabitIcons.chunked(6).forEach { rowIcons ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        rowIcons.forEach { candidate ->
-                            IconOption(
-                                icon = candidate.icon,
-                                selected = candidate.key == iconKey,
-                                onSelect = { iconKey = candidate.key },
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                        repeat(6 - rowIcons.size) { Spacer(Modifier.weight(1f)) }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                }
-                Text(
-                    text = stringResource(R.string.s6b36c6),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    HabitColors.forEach { candidate ->
-                        ColorOption(
-                            colorValue = candidate,
-                            selected = candidate == color,
-                            onSelect = { color = candidate },
-                        )
-                    }
-                }
-                Spacer(Modifier.height(20.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    // 取消：文字按钮
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable(onClick = onDismiss)
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.s625fb2),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    // 保存：主操作黑胶囊（浅色黑底白字 / 深色浅底黑字）
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(if (LocalDarkTheme.current) PillBgDark else PillBgLight)
-                            .clickable(enabled = name.isNotBlank()) {
-                                onSave(name.trim(), iconKey, color)
-                            }
-                            .padding(horizontal = 20.dp, vertical = 8.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.sbe5fbb),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Normal,
-                            color = MaterialTheme.colorScheme.surface,
-                        )
-                    }
-                }
             }
         }
     }
@@ -800,74 +776,48 @@ private fun DeleteHabitDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val dark = LocalDarkTheme.current
-    Dialog(onDismissRequest = onDismiss) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(if (dark) DarkGlassBg else GlassBg)
-                .border(
-                    1.dp,
-                    MaterialTheme.colorScheme.outline,
-                    RoundedCornerShape(16.dp),
-                )
-                .padding(24.dp),
-        ) {
-            Column {
-                Text(
-                    text = stringResource(R.string.s5a6fc1),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = stringResource(R.string.del_habit_fmt, habit.name),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(20.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
+    LumiDialog(
+        onDismissRequest = onDismiss,
+        title = stringResource(R.string.s5a6fc1),
+        actions = {
+            LumiDialogButtons {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable(onClick = onDismiss)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable(onClick = onDismiss)
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.s625fb2),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .shadow(
-                                4.dp,
-                                RoundedCornerShape(12.dp),
-                                ambientColor = Color(0x1AC47878),
-                                spotColor = Color(0x1AC47878),
-                            )
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFC47878))
-                            .clickable(onClick = onConfirm)
-                            .padding(horizontal = 20.dp, vertical = 8.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.s2f4aad),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Normal,
-                            color = Color.White,
-                        )
-                    }
+                    Text(
+                        text = stringResource(R.string.s625fb2),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.error.copy(alpha = 0.12f))
+                        .clickable(onClick = onConfirm)
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = stringResource(R.string.s2f4aad),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
             }
-        }
+        },
+    ) {
+        Text(
+            text = stringResource(R.string.del_habit_fmt, habit.name),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }

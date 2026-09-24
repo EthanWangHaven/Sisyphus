@@ -40,10 +40,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -77,13 +74,29 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cn.wangce.lumi.R
 import cn.wangce.lumi.data.local.FocusCategoryEntity
+import cn.wangce.lumi.ui.components.AppTextField
+import cn.wangce.lumi.ui.components.DangerButton
+import cn.wangce.lumi.ui.components.GhostTextButton
 import cn.wangce.lumi.ui.components.GlassCard
+import cn.wangce.lumi.ui.components.LumiDialog
+import cn.wangce.lumi.ui.components.LumiDialogButtons
+import cn.wangce.lumi.ui.components.LumiSheet
+import cn.wangce.lumi.ui.components.PrimaryPillButton
+import cn.wangce.lumi.ui.components.SecondaryButton
+import cn.wangce.lumi.ui.components.pressScale
 import cn.wangce.lumi.ui.components.bottomNavSpace
+import cn.wangce.lumi.ui.theme.CategoryBlue
+import cn.wangce.lumi.ui.theme.CategoryCoral
+import cn.wangce.lumi.ui.theme.CategoryColor
+import cn.wangce.lumi.ui.theme.CategoryColors
+import cn.wangce.lumi.ui.theme.CategoryGray
+import cn.wangce.lumi.ui.theme.CategoryIndigo
+import cn.wangce.lumi.ui.theme.CategoryOrange
+import cn.wangce.lumi.ui.theme.CategoryPurple
+import cn.wangce.lumi.ui.theme.CategoryTeal
 import cn.wangce.lumi.ui.theme.DarkOnSurface
 import cn.wangce.lumi.ui.theme.DarkOnSurfaceVariant
-import cn.wangce.lumi.ui.theme.DarkSheetBg
 import cn.wangce.lumi.ui.theme.LightOnSurface
-import cn.wangce.lumi.ui.theme.LightSheetBg
 import cn.wangce.lumi.ui.theme.LocalDarkTheme
 import cn.wangce.lumi.ui.theme.PillBgDark
 import cn.wangce.lumi.ui.theme.PillBgLight
@@ -92,6 +105,7 @@ import cn.wangce.lumi.ui.theme.ShadowLight
 import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.math.PI
+import kotlin.math.asin
 import kotlin.math.hypot
 import kotlin.math.min
 import kotlinx.coroutines.delay
@@ -209,7 +223,7 @@ private fun IdleView(
                     .size(44.dp)
                     .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f), CircleShape)
                     .clip(CircleShape)
-                    .clickable(onClick = onOpenStats),
+                    .pressScale(onPress = onOpenStats),
                 cornerRadius = 22,
             ) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -227,7 +241,7 @@ private fun IdleView(
                     .size(44.dp)
                     .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f), CircleShape)
                     .clip(CircleShape)
-                    .clickable(onClick = onOpenPrint),
+                    .pressScale(onPress = onOpenPrint),
                 cornerRadius = 22,
             ) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -269,11 +283,11 @@ private fun IdleView(
         // GO 黑色圆钮
         Box(
             modifier = Modifier
-                .size(78.dp)
+                .size(76.dp)
                 .shadow(6.dp, CircleShape, spotColor = if (dark) ShadowDark else ShadowLight)
                 .clip(CircleShape)
                 .background(if (dark) PillBgDark else PillBgLight)
-                .clickable(onClick = onStart),
+                .pressScale(onPress = onStart),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -340,7 +354,7 @@ private fun RunningView(
                 .shadow(5.dp, RoundedCornerShape(16.dp), spotColor = if (dark) ShadowDark else ShadowLight)
                 .clip(RoundedCornerShape(16.dp))
                 .background(if (dark) PillBgDark else PillBgLight)
-                .clickable(onClick = onFinish),
+                .pressScale(onPress = onFinish),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -350,13 +364,7 @@ private fun RunningView(
                 color = MaterialTheme.colorScheme.surface,
             )
         }
-        TextButton(onClick = onAbandon) {
-            Text(
-                text = "Give up",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        GhostTextButton(text = "Give up", onClick = onAbandon)
         Spacer(Modifier.height(bottomNavSpace()))
     }
 }
@@ -376,7 +384,7 @@ private fun StatsView(stats: FocusStats, onBack: () -> Unit) {
                 modifier = Modifier
                     .size(44.dp)
                     .clip(CircleShape)
-                    .clickable(onClick = onBack),
+                    .pressScale(onPress = onBack),
                 cornerRadius = 22,
             ) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -415,7 +423,16 @@ private fun StatsView(stats: FocusStats, onBack: () -> Unit) {
         Spacer(Modifier.height(30.dp))
         MonthDotGrid(monthSeconds = stats.monthSeconds)
         Spacer(Modifier.height(26.dp))
-        TopLabelBars(topLabels = stats.topLabels)
+        // 组4 多彩统计环：Top 分类 donut + 同色横条并排
+        if (stats.topLabels.isNotEmpty()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                FocusDonut(totalMinutes = stats.totalMinutes, topLabels = stats.topLabels)
+                Spacer(Modifier.width(22.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    TopLabelBars(topLabels = stats.topLabels)
+                }
+            }
+        }
         Spacer(Modifier.height(bottomNavSpace()))
     }
 }
@@ -453,7 +470,6 @@ private fun CategoryPicker(
     onAddCategory: (String, String) -> Unit,
     onDeleteCategory: (Long) -> Unit,
 ) {
-    val dark = LocalDarkTheme.current
     var showAddDialog by remember { mutableStateOf(false) }
     var pendingDeleteCat by remember { mutableStateOf<FocusCategoryEntity?>(null) }
     Box {
@@ -478,18 +494,8 @@ private fun CategoryPicker(
             )
         }
         if (expanded) {
-            ModalBottomSheet(
-                onDismissRequest = { onExpandedChange(false) },
-                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-                containerColor = if (dark) DarkSheetBg else LightSheetBg,
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-                        .padding(bottom = 28.dp),
-                ) {
+            LumiSheet(onDismissRequest = { onExpandedChange(false) }) {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     // 普通项目：单选，点击后收起弹窗
                     FocusViewModel.CATEGORIES.forEach { key ->
                         val selected = key == category
@@ -556,113 +562,99 @@ private fun CategoryPicker(
         if (showAddDialog) {
             var input by remember { mutableStateOf("") }
             var pickedIcon by remember { mutableStateOf(FOCUS_PRESET_ICONS.first().first) }
-            androidx.compose.material3.AlertDialog(
+            LumiDialog(
                 onDismissRequest = { showAddDialog = false },
-                containerColor = MaterialTheme.colorScheme.surface,
-                title = {
-                    Text(
-                        text = stringResource(R.string.wk_custom),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                },
-                text = {
-                    Column {
-                        androidx.compose.material3.OutlinedTextField(
-                            value = input,
-                            onValueChange = { input = it },
-                            singleLine = true,
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                            placeholder = {
-                                Text(
-                                    text = stringResource(R.string.focus_custom_hint),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            },
+                title = stringResource(R.string.wk_custom),
+                actions = {
+                    LumiDialogButtons {
+                        SecondaryButton(
+                            text = stringResource(R.string.s625fb2),
+                            onClick = { showAddDialog = false },
+                            modifier = Modifier.weight(1f),
                         )
-                        Spacer(Modifier.height(14.dp))
-                        // 预设图标：横向一行，点选搭配
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            items(FOCUS_PRESET_ICONS.size) { i ->
-                                val pair = FOCUS_PRESET_ICONS[i]
-                                val selected = pair.first == pickedIcon
-                                Box(
-                                    modifier = Modifier
-                                        .size(44.dp)
-                                        .clip(CircleShape)
-                                        .background(
-                                            MaterialTheme.colorScheme.onSurface.copy(alpha = if (selected) 0.12f else 0.04f)
-                                        )
-                                        .border(
-                                            width = if (selected) 1.5.dp else 1.dp,
-                                            color = if (selected) {
-                                                MaterialTheme.colorScheme.onSurface
-                                            } else {
-                                                MaterialTheme.colorScheme.outlineVariant
-                                            },
-                                            shape = CircleShape,
-                                        )
-                                        .clickable(onClick = { pickedIcon = pair.first }),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(
-                                        imageVector = pair.second,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurface,
-                                        modifier = Modifier.size(20.dp),
-                                    )
+                        PrimaryPillButton(
+                            text = stringResource(R.string.sbe5fbb),
+                            onClick = {
+                                if (input.isNotBlank()) {
+                                    onAddCategory(input.trim(), pickedIcon)
+                                    showAddDialog = false
                                 }
+                            },
+                            enabled = input.isNotBlank(),
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                },
+            ) {
+                Column {
+                    AppTextField(
+                        value = input,
+                        onValueChange = { input = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        hint = stringResource(R.string.focus_custom_hint),
+                    )
+                    Spacer(Modifier.height(14.dp))
+                    // 预设图标：横向一行，点选搭配
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        items(FOCUS_PRESET_ICONS.size) { i ->
+                            val pair = FOCUS_PRESET_ICONS[i]
+                            val selected = pair.first == pickedIcon
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = if (selected) 0.12f else 0.04f)
+                                    )
+                                    .border(
+                                        width = if (selected) 1.5.dp else 1.dp,
+                                        color = if (selected) {
+                                            MaterialTheme.colorScheme.onSurface
+                                        } else {
+                                            MaterialTheme.colorScheme.outlineVariant
+                                        },
+                                        shape = CircleShape,
+                                    )
+                                    .clickable(onClick = { pickedIcon = pair.first }),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    imageVector = pair.second,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.size(20.dp),
+                                )
                             }
                         }
                     }
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        if (input.isNotBlank()) {
-                            onAddCategory(input.trim(), pickedIcon)
-                            showAddDialog = false
-                        }
-                    }) {
-                        Text(text = stringResource(R.string.sbe5fbb))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showAddDialog = false }) {
-                        Text(text = stringResource(R.string.s625fb2))
-                    }
-                },
-            )
+                }
+            }
         }
         // 删除自定义项目确认弹窗
         pendingDeleteCat?.let { cat ->
-            androidx.compose.material3.AlertDialog(
+            LumiDialog(
                 onDismissRequest = { pendingDeleteCat = null },
-                containerColor = MaterialTheme.colorScheme.surface,
-                title = {
-                    Text(
-                        text = stringResource(R.string.s2f4aad) + " " + cat.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        onDeleteCategory(cat.id)
-                        pendingDeleteCat = null
-                    }) {
-                        Text(
+                title = stringResource(R.string.s2f4aad) + " " + cat.name,
+                actions = {
+                    LumiDialogButtons {
+                        SecondaryButton(
+                            text = stringResource(R.string.s625fb2),
+                            onClick = { pendingDeleteCat = null },
+                            modifier = Modifier.weight(1f),
+                        )
+                        DangerButton(
                             text = stringResource(R.string.s2f4aad),
-                            color = MaterialTheme.colorScheme.error,
+                            onClick = {
+                                onDeleteCategory(cat.id)
+                                pendingDeleteCat = null
+                            },
+                            modifier = Modifier.weight(1f),
                         )
                     }
                 },
-                dismissButton = {
-                    TextButton(onClick = { pendingDeleteCat = null }) {
-                        Text(text = stringResource(R.string.s625fb2))
-                    }
-                },
-            )
+            ) {
+                Text(stringResource(R.string.del_confirm, cat.name))
+            }
         }
     }
 }
@@ -928,11 +920,67 @@ private fun MonthDotGrid(monthSeconds: Map<LocalDate, Int>) {
     }
 }
 
-// Top 5 分类条形（黑白：黑条 + 分类名 + 分钟数）
+// 专注分类 → pastel 分类色（自定义分类按序取色板兜底）
+private val FocusCategoryColorMap = mapOf(
+    "工作" to CategoryIndigo,
+    "阅读" to CategoryTeal,
+    "学习" to CategoryBlue,
+    "运动" to CategoryCoral,
+    "冥想" to CategoryPurple,
+    "撸宠" to CategoryOrange,
+    "吸烟" to CategoryGray,
+)
+
+private fun focusCategoryColor(label: String, index: Int): CategoryColor =
+    FocusCategoryColorMap[label] ?: CategoryColors[index % CategoryColors.size]
+
+// 组4 多彩进度环：Top 分类时长占比 donut，中心累计分钟
+@Composable
+private fun FocusDonut(totalMinutes: Int, topLabels: List<Pair<String, Int>>) {
+    Box(contentAlignment = Alignment.Center) {
+        Canvas(modifier = Modifier.size(128.dp)) {
+            val strokeW = 13.dp.toPx()
+            val topLeft = Offset(strokeW / 2f, strokeW / 2f)
+            val arcSize = Size(size.width - strokeW, size.height - strokeW)
+            val style = Stroke(width = strokeW, cap = StrokeCap.Round)
+            val colors = topLabels.mapIndexed { i, (label, _) -> focusCategoryColor(label, i).fg }
+            if (colors.size == 1) {
+                drawArc(colors[0], -90f, 360f, false, topLeft, arcSize, style = style)
+            } else {
+                // Round cap 会向外延伸半环宽，段间 gap 需按几何补偿，保证视觉留白
+                val radius = (size.minDimension - strokeW) / 2f
+                val capDeg = Math.toDegrees(asin((strokeW / 2f) / radius).toDouble()).toFloat()
+                val gap = capDeg * 2f + 2f
+                val total = topLabels.sumOf { it.second }.coerceAtLeast(1)
+                val usable = 360f - gap * colors.size
+                var start = -90f + gap / 2f
+                colors.forEachIndexed { i, color ->
+                    val sweep = usable * (topLabels[i].second / total.toFloat())
+                    drawArc(color, start, sweep, false, topLeft, arcSize, style = style)
+                    start += sweep + gap
+                }
+            }
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = totalMinutes.toString(),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = stringResource(R.string.s3a17b7),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+// Top 分类横条（条色 = donut 对应段分类色）
 @Composable
 private fun TopLabelBars(topLabels: List<Pair<String, Int>>) {
     if (topLabels.isEmpty()) return
-    val dark = LocalDarkTheme.current
     val maxMinutes = topLabels.first().second.coerceAtLeast(1)
     Column {
         Text(
@@ -942,7 +990,8 @@ private fun TopLabelBars(topLabels: List<Pair<String, Int>>) {
             color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(Modifier.height(12.dp))
-        topLabels.forEach { (label, minutes) ->
+        topLabels.forEachIndexed { i, (label, minutes) ->
+            val barColor = focusCategoryColor(label, i).fg
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = categoryLabel(label),
@@ -962,7 +1011,7 @@ private fun TopLabelBars(topLabels: List<Pair<String, Int>>) {
                             .fillMaxWidth(minutes / maxMinutes.toFloat())
                             .height(8.dp)
                             .clip(RoundedCornerShape(4.dp))
-                            .background(if (dark) DarkOnSurface else LightOnSurface),
+                            .background(barColor),
                     )
                 }
                 Text(

@@ -26,6 +26,11 @@ if (isCompileExport) {
     counterFile.outputStream().use { counterProps.store(it, "auto build counter") }
 }
 
+// 版本号：patch 每满 100 进位到 minor（...2.0.100 → 2.1.1 → 2.1.26）
+val versionMinor = (buildCount - 1).coerceAtLeast(0) / 100
+val versionPatch = (buildCount - 1).coerceAtLeast(0) % 100 + 1
+val versionNameFull = "2.$versionMinor.$versionPatch"
+
 android {
     namespace = "cn.wangce.lumi"
     compileSdk = 35
@@ -35,7 +40,7 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = buildCount
-        versionName = "2.0.$buildCount"
+        versionName = versionNameFull
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // 音乐上传 GitHub Token：从环境变量或 ~/.gradle/gradle.properties 注入，勿硬编码

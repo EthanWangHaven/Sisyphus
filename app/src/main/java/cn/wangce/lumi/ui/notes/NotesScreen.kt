@@ -4,9 +4,9 @@ package cn.wangce.lumi.ui.notes
 // 底部居中「笔记/待办」分段切换；黄色 FAB 在笔记 tab 新建笔记
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,30 +29,31 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.material.icons.automirrored.outlined.Notes
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -61,39 +62,44 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cn.wangce.lumi.R
 import cn.wangce.lumi.data.image.ImageStore
 import cn.wangce.lumi.data.local.NoteEntity
+import cn.wangce.lumi.data.local.NoteImageEntity
 import cn.wangce.lumi.data.local.TodoEntity
+import cn.wangce.lumi.ui.components.AppFab
+import cn.wangce.lumi.ui.components.AppTextField
+import cn.wangce.lumi.ui.components.DangerButton
 import cn.wangce.lumi.ui.components.EmptyState
 import cn.wangce.lumi.ui.components.GlassCard
+import cn.wangce.lumi.ui.components.LumiDialog
+import cn.wangce.lumi.ui.components.LumiDialogButtons
+import cn.wangce.lumi.ui.components.PrimaryPillButton
+import cn.wangce.lumi.ui.components.SecondaryButton
+import cn.wangce.lumi.ui.components.SelectableChip
 import cn.wangce.lumi.ui.components.SwipeToDeleteRow
 import cn.wangce.lumi.ui.components.bottomNavSpace
-import cn.wangce.lumi.ui.components.pressScale
 import cn.wangce.lumi.ui.moments.PathImage
 import cn.wangce.lumi.ui.tasks.FilterTabs
 import cn.wangce.lumi.ui.tasks.TodoDeleteDialog
 import cn.wangce.lumi.ui.tasks.TodoEditSheet
+import cn.wangce.lumi.ui.tasks.TodoFilter
 import cn.wangce.lumi.ui.tasks.TodoRow
 import cn.wangce.lumi.ui.tasks.TasksViewModel
+import cn.wangce.lumi.ui.theme.AccentInk
+import cn.wangce.lumi.ui.theme.AccentPaper
 import cn.wangce.lumi.ui.theme.LocalDarkTheme
-import cn.wangce.lumi.ui.theme.MorandiPink
-import cn.wangce.lumi.ui.theme.PillBgDark
-import cn.wangce.lumi.ui.theme.PillBgLight
-import cn.wangce.lumi.ui.theme.ShadowDark
-import cn.wangce.lumi.ui.theme.ShadowLight
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import androidx.compose.ui.text.font.FontWeight
 
-// 底部分段切换的页面类型
+// 底部分段切换的页面类型（顺序即左右：先在左边，笔记在右边）
 private enum class NotesTab(@StringRes val labelRes: Int, val icon: ImageVector) {
-    NOTES(R.string.s7051dc, Icons.AutoMirrored.Filled.Notes),
     TODOS(R.string.sb60ec8, Icons.Outlined.TaskAlt),
+    NOTES(R.string.s7051dc, Icons.AutoMirrored.Filled.Notes),
 }
 
 // 备忘录和待办页
@@ -112,8 +118,10 @@ fun NotesScreen(
 
     val todos by tasksViewModel.todos.collectAsStateWithLifecycle()
     val todoFilter by tasksViewModel.filter.collectAsStateWithLifecycle()
+    val todoQuery by tasksViewModel.query.collectAsStateWithLifecycle()
 
-    var tab by remember { mutableStateOf(NotesTab.NOTES) }
+    // 进入页面默认先展示待办；rememberSaveable 保证旋转/重建后 tab 与内容一致
+    var tab by rememberSaveable { mutableStateOf(NotesTab.TODOS) }
     var pendingDeleteNote by remember { mutableStateOf<NoteEntity?>(null) }
     var editingTodo by remember { mutableStateOf<TodoEntity?>(null) }
     var pendingDeleteTodo by remember { mutableStateOf<TodoEntity?>(null) }
@@ -136,141 +144,89 @@ fun NotesScreen(
                 compact = true,
             )
             Spacer(Modifier.height(12.dp))
+            // 搜索框按 tab 绑定各自的查询：待办 tab 过滤待办、笔记 tab 过滤笔记
+            val onNotes = tab == NotesTab.NOTES
             SearchField(
-                query = query,
-                onQueryChange = notesViewModel::setQuery,
-                // 待办 tab 显示"搜索待办"，笔记 tab 显示"搜索笔记"
-                hint = stringResource(if (tab == NotesTab.TODOS) R.string.s5b27c9 else R.string.sbcd47c),
+                query = if (onNotes) query else todoQuery,
+                onQueryChange = if (onNotes) notesViewModel::setQuery else tasksViewModel::setQuery,
+                hint = stringResource(if (onNotes) R.string.sbcd47c else R.string.s5b27c9),
             )
             Spacer(Modifier.height(12.dp))
 
-            if (tab == NotesTab.NOTES) {
-                // 分类标签 chips：全部 + 已有标签
-                TagChipsRow(
-                    tags = tags,
-                    selected = selectedTag,
-                    onSelect = notesViewModel::selectTag,
-                )
-                Spacer(Modifier.height(12.dp))
-
-                if (notes.isEmpty()) {
-                    EmptyState(
-                        title = if (selectedTag.isEmpty() && query.isBlank()) {
-                            stringResource(R.string.s7bda38)
-                        } else {
-                            stringResource(R.string.s7c5b9b)
-                        },
-                        description = if (selectedTag.isEmpty() && query.isBlank()) {
-                            stringResource(R.string.s9930eb)
-                        } else {
-                            stringResource(R.string.sb202c5)
-                        },
-                        modifier = Modifier.weight(1f),
+            // 内容区随 tab 显式切换；Crossfade 带淡入淡出，杜绝状态不同步
+            Crossfade(
+                targetState = tab,
+                label = "NotesTabContent",
+                modifier = Modifier.weight(1f),
+            ) { current ->
+                when (current) {
+                    NotesTab.NOTES -> NotesTabContent(
+                        notes = notes,
+                        tags = tags,
+                        selectedTag = selectedTag,
+                        query = query,
+                        noteImages = noteImages,
+                        imageStore = notesViewModel.imageStore,
+                        onSelectTag = notesViewModel::selectTag,
+                        onOpenNote = onOpenNote,
+                        onDeleteNote = { notesViewModel.deleteNote(it.id) },
+                        onRequestDeleteNote = { pendingDeleteNote = it },
                     )
-                } else {
-                    LazyVerticalStaggeredGrid(
-                        columns = StaggeredGridCells.Fixed(2),
-                        modifier = Modifier.weight(1f),
-                        verticalItemSpacing = 12.dp,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        items(notes, key = { it.id }) { note ->
-                            SwipeToDeleteRow(onDelete = { notesViewModel.deleteNote(note.id) }) {
-                                NoteCard(
-                                    note = note,
-                                    coverPath = noteImages[note.id]?.firstOrNull()?.imagePath,
-                                    imageStore = notesViewModel.imageStore,
-                                    onClick = { onOpenNote(note.id) },
-                                    onLongClick = { pendingDeleteNote = note },
-                                )
-                            }
-                        }
-                        item(span = StaggeredGridItemSpan.FullLine) {
-                            Spacer(Modifier.height(bottomNavSpace()))
-                        }
-                    }
-                }
-            } else {
-                // 待办 tab：筛选 + 列表（添加走右下角加号弹窗）
-                FilterTabs(current = todoFilter, onSelect = tasksViewModel::setFilter)
-                Spacer(Modifier.height(12.dp))
-
-                if (todos.isEmpty()) {
-                    EmptyState(
-                        title = stringResource(R.string.s48b826),
-                        description = stringResource(R.string.s714675),
-                        modifier = Modifier.weight(1f),
+                    NotesTab.TODOS -> TodosTabContent(
+                        todos = todos,
+                        todoFilter = todoFilter,
+                        onSetFilter = tasksViewModel::setFilter,
+                        onToggle = { tasksViewModel.toggleTodo(it) },
+                        onEdit = { editingTodo = it },
+                        onRequestDeleteTodo = { pendingDeleteTodo = it },
+                        onDeleteTodo = { tasksViewModel.deleteTodo(it.id) },
                     )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        items(todos, key = { it.id }) { todo ->
-                            SwipeToDeleteRow(onDelete = { tasksViewModel.deleteTodo(todo.id) }) {
-                                TodoRow(
-                                    todo = todo,
-                                    onToggle = { tasksViewModel.toggleTodo(todo) },
-                                    onEdit = { editingTodo = todo },
-                                    onRequestDelete = { pendingDeleteTodo = todo },
-                                )
-                            }
-                        }
-                        item {
-                            Spacer(Modifier.height(bottomNavSpace()))
-                        }
-                    }
                 }
             }
         }
 
-        // 新建主按钮：56dp 正圆黑白胶囊，两 tab 共用（笔记 tab 新建笔记，待办 tab 弹出添加弹窗，需求新3/新6）
-        Box(
+        // 新建主按钮：56dp 品牌蓝圆钮（笔记 tab 新建笔记，待办 tab 弹出添加弹窗，需求新3/新6）
+        AppFab(
+            onClick = { if (tab == NotesTab.NOTES) onNewNote() else showAddTodo = true },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 20.dp, bottom = bottomNavSpace())
-                .shadow(
-                    elevation = 10.dp,
-                    shape = CircleShape,
-                    ambientColor = if (LocalDarkTheme.current) ShadowDark else ShadowLight,
-                    spotColor = if (LocalDarkTheme.current) ShadowDark else ShadowLight,
-                )
-                .clip(CircleShape)
-                .background(if (LocalDarkTheme.current) PillBgDark else PillBgLight)
-                .size(56.dp)
-                .pressScale(onPress = {
-                    if (tab == NotesTab.NOTES) onNewNote() else showAddTodo = true
-                }),
-            contentAlignment = Alignment.Center,
+                .padding(end = 20.dp, bottom = bottomNavSpace()),
         ) {
             Icon(
                 imageVector = Icons.Filled.Add,
                 contentDescription = stringResource(R.string.s3147cb),
-                tint = MaterialTheme.colorScheme.surface,
+                tint = LocalContentColor.current,
             )
         }
 
     }
 
     pendingDeleteNote?.let { note ->
-        androidx.compose.material3.AlertDialog(
+        LumiDialog(
             onDismissRequest = { pendingDeleteNote = null },
-            title = { Text(stringResource(R.string.s847dcf)) },
-            text = { Text(stringResource(R.string.del_confirm, note.title.ifBlank { stringResource(R.string.s44a77d) })) },
-            confirmButton = {
-                androidx.compose.material3.TextButton(onClick = {
-                    notesViewModel.deleteNote(note.id)
-                    pendingDeleteNote = null
-                }) {
-                    Text(stringResource(R.string.s2f4aad), color = MorandiPink)
+            title = stringResource(R.string.s847dcf),
+            actions = {
+                LumiDialogButtons {
+                    // 取消：白底 hairline 胶囊
+                    SecondaryButton(
+                        text = stringResource(R.string.s625fb2),
+                        onClick = { pendingDeleteNote = null },
+                        modifier = Modifier.weight(1f),
+                    )
+                    // 删除：破坏性操作，橙红底胶囊
+                    DangerButton(
+                        text = stringResource(R.string.s2f4aad),
+                        onClick = {
+                            notesViewModel.deleteNote(note.id)
+                            pendingDeleteNote = null
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             },
-            dismissButton = {
-                androidx.compose.material3.TextButton(onClick = { pendingDeleteNote = null }) {
-                    Text(stringResource(R.string.s625fb2))
-                }
-            },
-        )
+        ) {
+            Text(stringResource(R.string.del_confirm, note.title.ifBlank { stringResource(R.string.s44a77d) }))
+        }
     }
 
     editingTodo?.let { todo ->
@@ -307,6 +263,119 @@ fun NotesScreen(
     }
 }
 
+// 笔记 tab 内容：分类 chips + 两列瀑布流卡片
+@Composable
+private fun NotesTabContent(
+    notes: List<NoteEntity>,
+    tags: List<String>,
+    selectedTag: String,
+    query: String,
+    noteImages: Map<Long, List<NoteImageEntity>>,
+    imageStore: ImageStore,
+    onSelectTag: (String) -> Unit,
+    onOpenNote: (Long) -> Unit,
+    onDeleteNote: (NoteEntity) -> Unit,
+    onRequestDeleteNote: (NoteEntity) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        // 分类标签 chips：全部 + 已有标签
+        TagChipsRow(
+            tags = tags,
+            selected = selectedTag,
+            onSelect = onSelectTag,
+        )
+        Spacer(Modifier.height(12.dp))
+
+        if (notes.isEmpty()) {
+            EmptyState(
+                title = if (selectedTag.isEmpty() && query.isBlank()) {
+                    stringResource(R.string.s7bda38)
+                } else {
+                    stringResource(R.string.s7c5b9b)
+                },
+                description = if (selectedTag.isEmpty() && query.isBlank()) {
+                    stringResource(R.string.s9930eb)
+                } else {
+                    stringResource(R.string.sb202c5)
+                },
+                modifier = Modifier.weight(1f),
+                icon = if (selectedTag.isEmpty() && query.isBlank()) {
+                    Icons.AutoMirrored.Outlined.Notes
+                } else {
+                    Icons.Outlined.SearchOff
+                },
+            )
+        } else {
+            LazyVerticalStaggeredGrid(
+                columns = StaggeredGridCells.Fixed(2),
+                modifier = Modifier.weight(1f),
+                verticalItemSpacing = 12.dp,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                items(notes, key = { it.id }) { note ->
+                    SwipeToDeleteRow(onDelete = { onDeleteNote(note) }, cornerRadius = 16) {
+                        NoteCard(
+                            note = note,
+                            coverPath = noteImages[note.id]?.firstOrNull()?.imagePath,
+                            imageStore = imageStore,
+                            onClick = { onOpenNote(note.id) },
+                            onLongClick = { onRequestDeleteNote(note) },
+                        )
+                    }
+                }
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    Spacer(Modifier.height(bottomNavSpace()))
+                }
+            }
+        }
+    }
+}
+
+// 待办 tab 内容：筛选条 + 待办列表
+@Composable
+private fun TodosTabContent(
+    todos: List<TodoEntity>,
+    todoFilter: TodoFilter,
+    onSetFilter: (TodoFilter) -> Unit,
+    onToggle: (TodoEntity) -> Unit,
+    onEdit: (TodoEntity) -> Unit,
+    onRequestDeleteTodo: (TodoEntity) -> Unit,
+    onDeleteTodo: (TodoEntity) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        FilterTabs(current = todoFilter, onSelect = onSetFilter)
+        Spacer(Modifier.height(12.dp))
+
+        if (todos.isEmpty()) {
+            EmptyState(
+                title = stringResource(R.string.s48b826),
+                description = stringResource(R.string.s714675),
+                modifier = Modifier.weight(1f),
+                icon = Icons.Outlined.TaskAlt,
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                items(todos, key = { it.id }) { todo ->
+                    SwipeToDeleteRow(onDelete = { onDeleteTodo(todo) }) {
+                        TodoRow(
+                            todo = todo,
+                            onToggle = { onToggle(todo) },
+                            onEdit = { onEdit(todo) },
+                            onRequestDelete = { onRequestDeleteTodo(todo) },
+                        )
+                    }
+                }
+                item {
+                    Spacer(Modifier.height(bottomNavSpace()))
+                }
+            }
+        }
+    }
+}
+
 // 添加待办弹窗：中央圆角卡片 + 输入框 + 取消/保存胶囊（风格对齐瞬间页删除弹窗）
 @Composable
 private fun AddTodoDialog(
@@ -315,71 +384,34 @@ private fun AddTodoDialog(
 ) {
     var text by remember { mutableStateOf("") }
     val submit = { if (text.isNotBlank()) onAdd(text.trim()) }
-    Dialog(onDismissRequest = onDismiss) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp))
-                .padding(24.dp),
-        ) {
-            Column {
-                Text(
-                    text = stringResource(R.string.add_todo_title),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
+    LumiDialog(
+        onDismissRequest = onDismiss,
+        title = stringResource(R.string.add_todo_title),
+        actions = {
+            LumiDialogButtons {
+                // 取消：白底 hairline 胶囊
+                SecondaryButton(
+                    text = stringResource(R.string.s625fb2),
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
                 )
-                Spacer(Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { submit() }),
+                // 保存：主操作品牌蓝胶囊，内容为空时禁用
+                PrimaryPillButton(
+                    text = stringResource(R.string.sbe5fbb),
+                    onClick = { onAdd(text.trim()) },
+                    enabled = text.isNotBlank(),
+                    modifier = Modifier.weight(1f),
                 )
-                Spacer(Modifier.height(20.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    // 取消：纯文字按钮
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable(onClick = onDismiss)
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.s625fb2),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    // 保存：主操作黑胶囊
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(if (LocalDarkTheme.current) PillBgDark else PillBgLight)
-                            .clickable(onClick = submit)
-                            .padding(horizontal = 20.dp, vertical = 8.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.sbe5fbb),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.surface,
-                        )
-                    }
-                }
             }
-        }
+        },
+    ) {
+        AppTextField(
+            value = text,
+            onValueChange = { text = it },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { submit() }),
+        )
     }
 }
 
@@ -391,51 +423,35 @@ private fun SearchField(
     hint: String,
 ) {
     GlassCard(modifier = Modifier.fillMaxWidth(), cornerRadius = 16) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Search,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(Modifier.width(10.dp))
-            BasicTextField(
-                value = query,
-                onValueChange = onQueryChange,
-                modifier = Modifier.weight(1f),
-                textStyle = MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.onSurface,
-                ),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                singleLine = true,
-                decorationBox = { inner ->
-                    Box {
-                        if (query.isEmpty()) {
-                            Text(
-                                text = hint,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        inner()
-                    }
-                },
-            )
-            if (query.isNotEmpty()) {
-                Spacer(Modifier.width(8.dp))
+        AppTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier.fillMaxWidth(),
+            hint = hint,
+            bare = true,
+            leading = {
                 Icon(
-                    imageVector = Icons.Filled.Close,
-                    contentDescription = stringResource(R.string.s9d2f1a),
+                    imageVector = Icons.Filled.Search,
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .size(16.dp)
-                        .clickable { onQueryChange("") },
+                    modifier = Modifier.size(18.dp),
                 )
-            }
-        }
+            },
+            trailing = if (query.isNotEmpty()) {
+                {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.s9d2f1a),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clickable { onQueryChange("") },
+                    )
+                }
+            } else {
+                null
+            },
+        )
     }
 }
 
@@ -448,48 +464,15 @@ private fun TagChipsRow(
 ) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
-            TagChip(
-                label = stringResource(R.string.sa8b0c2),
+            SelectableChip(
+                text = stringResource(R.string.sa8b0c2),
                 selected = selected.isEmpty(),
                 onClick = { onSelect("") },
             )
         }
         items(tags, key = { it }) { tag ->
-            TagChip(label = tag, selected = selected == tag, onClick = { onSelect(tag) })
+            SelectableChip(text = tag, selected = selected == tag, onClick = { onSelect(tag) })
         }
-    }
-}
-
-// 单个分类 chip：选中黑胶囊白字 / 未选中浅底
-@Composable
-private fun TagChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    val dark = LocalDarkTheme.current
-    val bg = if (selected) {
-        if (dark) PillBgDark else PillBgLight
-    } else {
-        MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
-    }
-    val fg = if (selected) {
-        MaterialTheme.colorScheme.surface
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(bg)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = fg,
-        )
     }
 }
 
@@ -584,7 +567,6 @@ private fun NotesTabSwitcher(
     modifier: Modifier = Modifier,
     compact: Boolean = false,
 ) {
-    val dark = LocalDarkTheme.current
     GlassCard(modifier = modifier, cornerRadius = 24, elevation = 4) {
         Row(
             modifier = Modifier.padding(if (compact) 4.dp else 6.dp),
@@ -592,13 +574,15 @@ private fun NotesTabSwitcher(
         ) {
             NotesTab.entries.forEach { tabItem ->
                 val selected = tabItem == current
+                // 分段切换选中语言与主筛选一致：墨黑填充白字 / 未选中透明底灰字（黑即强调）
+                val dark = LocalDarkTheme.current
                 val bg = if (selected) {
-                    if (dark) PillBgDark else PillBgLight
+                    if (dark) AccentPaper else AccentInk
                 } else {
                     Color.Transparent
                 }
                 val fg = if (selected) {
-                    MaterialTheme.colorScheme.surface
+                    if (dark) AccentInk else Color.White
                 } else {
                     MaterialTheme.colorScheme.onSurfaceVariant
                 }

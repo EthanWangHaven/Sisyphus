@@ -31,8 +31,8 @@
     <string name="s7e66eb">备忘录</string>
     <string name="sb60ec8">待办</string>
     <string name="se217c5">专注</string>
-    <string name="s8e5e86">瞬间</string>
-    <string name="s49e233">生活瞬间</string>
+    <string name="s8e5e86">回忆</string>
+    <string name="s49e233">回忆</string>
     <string name="s95521b">音乐</string>
     <string name="scd27ec">习惯打卡</string>
     <string name="se366cc">设置</string>
@@ -41,6 +41,7 @@
 
     <!-- ============ 首页 ============ -->
     <string name="sfad522">已完成</string>
+    <string name="today_todo">今日待办</string>
     <string name="s48b826">暂无待办事项</string>
     <string name="s48c14f">到「笔记和待办」页添加任务</string>
     <string name="s714675">点击右下角加号添加任务</string>
@@ -105,6 +106,7 @@
     <string name="sd64fda">已删除一条瞬间</string>
     <string name="s0cd71b">暂无生活瞬间</string>
     <string name="s2295dc">记录瞬间</string>
+    <string name="moment_title_hint">标题</string>
     <string name="s605687">记下此刻</string>
     <string name="s2f3a89">关闭预览</string>
     <string name="s833152">移除图片</string>

@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -45,8 +44,6 @@ import androidx.compose.material.icons.outlined.SportsBasketball
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -56,10 +53,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.SolidColor
@@ -77,23 +71,23 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cn.wangce.lumi.R
 import cn.wangce.lumi.data.local.WorkoutEntity
+import cn.wangce.lumi.ui.components.AppTextField
+import cn.wangce.lumi.ui.components.DangerButton
 import cn.wangce.lumi.ui.components.DumbbellIcon
 import cn.wangce.lumi.ui.components.EmptyState
 import cn.wangce.lumi.ui.components.GlassCard
+import cn.wangce.lumi.ui.components.LumiDialog
+import cn.wangce.lumi.ui.components.LumiDialogButtons
+import cn.wangce.lumi.ui.components.LumiSheet
+import cn.wangce.lumi.ui.components.PrimaryPillButton
+import cn.wangce.lumi.ui.components.SecondaryButton
 import cn.wangce.lumi.ui.components.SegmentedControl
 import cn.wangce.lumi.ui.components.SegmentedOption
 import cn.wangce.lumi.ui.components.SwipeToDeleteRow
 import cn.wangce.lumi.ui.components.bottomNavSpace
-import cn.wangce.lumi.ui.components.pressScale
-import cn.wangce.lumi.ui.theme.AccentGradientEnd
-import cn.wangce.lumi.ui.theme.AccentGradientEndDark
-import cn.wangce.lumi.ui.theme.AccentGradientStart
-import cn.wangce.lumi.ui.theme.AccentGradientStartDark
-import cn.wangce.lumi.ui.theme.DarkSheetBg
-import cn.wangce.lumi.ui.theme.LightSheetBg
+import cn.wangce.lumi.ui.theme.AccentInk
+import cn.wangce.lumi.ui.theme.AccentPaper
 import cn.wangce.lumi.ui.theme.LocalDarkTheme
-import cn.wangce.lumi.ui.theme.ShadowDark
-import cn.wangce.lumi.ui.theme.ShadowLight
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -101,26 +95,26 @@ import java.time.format.FormatStyle
 import java.util.Locale
 import kotlin.math.roundToInt
 
-// 灰阶数据色块上的内容色自适应：亮灰配墨字、深灰配白字（黑白体系）
+// 数据色块上的内容色自适应：亮底配墨字、深底配白字
 private fun onInk(bg: Color): Color =
     if (bg.luminance() > 0.5f) Color(0xFF1A1A1A) else Color(0xFFFFFFFF)
 
-// 旧版各色 colorKey → 统一散步浅灰（兼容历史记录数据显示；用户要求所有项目卡片同色）
+// 旧版各色 colorKey → pastel 分类色 fg 映射（兼容历史记录数据，数据无需迁移）
 private val LegacyColorMap = mapOf(
-    0xFFB4D4FFL to 0xFFD9D9D9L, 0xFFD4C5E8L to 0xFFD9D9D9L,
-    0xFFB8E6C8L to 0xFFD9D9D9L, 0xFFFFD4A8L to 0xFFD9D9D9L,
-    0xFFFFB4B4L to 0xFFD9D9D9L, 0xFFFFD070L to 0xFFD9D9D9L,
-    0xFFC9E4D2L to 0xFFD9D9D9L, 0xFFE8DCC0L to 0xFFD9D9D9L,
-    0xFFD8CFC4L to 0xFFD9D9D9L,
+    0xFFB4D4FFL to 0xFF1C7ED6L, 0xFFD4C5E8L to 0xFF7048E8L,
+    0xFFB8E6C8L to 0xFF30A46CL, 0xFFFFD4A8L to 0xFFDD7A00L,
+    0xFFFFB4B4L to 0xFFE5484DL, 0xFFFFD070L to 0xFFC79000L,
+    0xFFC9E4D2L to 0xFF0CA678L, 0xFFE8DCC0L to 0xFFC79000L,
+    0xFFD8CFC4L to 0xFF6B7280L, 0xFFD9D9D9L to 0xFF6B7280L,
 )
 
 private fun displayColor(colorKey: Long): Long = LegacyColorMap[colorKey] ?: colorKey
 
-// 自定义项目的图标 key 与颜色
+// 自定义项目的图标 key 与颜色（CategoryGray fg 中性灰）
 private const val CUSTOM_KEY = "custom"
-private const val CUSTOM_COLOR = 0xFFD9D9D9L
+private const val CUSTOM_COLOR = 0xFF6B7280L
 
-// 锻炼预设：MET 取 Ainswright 体动 compendium 常用近似值，颜色统一为散步卡片浅灰（用户要求同色）
+// 锻炼预设：MET 取 Ainswright 体动 compendium 常用近似值，颜色取 CategoryColors fg 值
 private data class WorkoutPreset(
     val key: String,
     val nameRes: Int,
@@ -130,14 +124,14 @@ private data class WorkoutPreset(
 )
 
 private val WorkoutPresets = listOf(
-    WorkoutPreset("run", R.string.wk_run, 9.8, 0xFFD9D9D9, Icons.AutoMirrored.Outlined.DirectionsRun),
-    WorkoutPreset("cycling", R.string.wk_cycling, 6.8, 0xFFD9D9D9, Icons.AutoMirrored.Outlined.DirectionsBike),
-    WorkoutPreset("swim", R.string.wk_swim, 8.3, 0xFFD9D9D9, Icons.Outlined.Pool),
-    WorkoutPreset("strength", R.string.wk_strength, 6.0, 0xFFD9D9D9, DumbbellIcon),
-    WorkoutPreset("yoga", R.string.wk_yoga, 3.0, 0xFFD9D9D9, Icons.Outlined.SelfImprovement),
-    WorkoutPreset("ball", R.string.wk_ball, 7.0, 0xFFD9D9D9, Icons.Outlined.SportsBasketball),
-    WorkoutPreset("stairs", R.string.wk_stairs, 8.0, 0xFFD9D9D9, Icons.Outlined.Hiking),
-    WorkoutPreset("walk", R.string.wk_walk, 3.5, 0xFFD9D9D9, Icons.AutoMirrored.Outlined.DirectionsWalk),
+    WorkoutPreset("run", R.string.wk_run, 9.8, 0xFFE5484DL, Icons.AutoMirrored.Outlined.DirectionsRun),      // Coral
+    WorkoutPreset("cycling", R.string.wk_cycling, 6.8, 0xFF0CA678L, Icons.AutoMirrored.Outlined.DirectionsBike), // Teal
+    WorkoutPreset("swim", R.string.wk_swim, 8.3, 0xFF1C7ED6L, Icons.Outlined.Pool),                          // Blue
+    WorkoutPreset("strength", R.string.wk_strength, 6.0, 0xFF4263EBL, DumbbellIcon),                         // Indigo
+    WorkoutPreset("yoga", R.string.wk_yoga, 3.0, 0xFF7048E8L, Icons.Outlined.SelfImprovement),               // Purple
+    WorkoutPreset("ball", R.string.wk_ball, 7.0, 0xFFDD7A00L, Icons.Outlined.SportsBasketball),              // Orange
+    WorkoutPreset("stairs", R.string.wk_stairs, 8.0, 0xFF30A46CL, Icons.Outlined.Hiking),                    // Green
+    WorkoutPreset("walk", R.string.wk_walk, 3.5, 0xFFC79000L, Icons.AutoMirrored.Outlined.DirectionsWalk),   // Yellow
 )
 
 // 按 key 取图标：自定义/未知 key 兜底 Add
@@ -249,7 +243,7 @@ private fun WorkoutTabs(tab: Int, onSelect: (Int) -> Unit) {
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(8.dp))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -337,12 +331,8 @@ private fun WorkoutMonthCalendar(
         month.minusDays(((month.dayOfWeek.value + 6) % 7).toLong())
     }
     val cells = remember(month, gridStart) { (0 until 42).map { gridStart.plusDays(it.toLong()) } }
-    val accentBrush = Brush.verticalGradient(
-        listOf(
-            if (dark) AccentGradientStartDark else AccentGradientStart,
-            if (dark) AccentGradientEndDark else AccentGradientEnd,
-        ),
-    )
+    // 选中日 = 墨色实心（与全 App「黑即强调」一致，不再用品牌蓝渐变）
+    val selectedDayBg = if (dark) AccentPaper else AccentInk
 
     GlassCard(modifier = Modifier.fillMaxWidth(), cornerRadius = 24) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -430,10 +420,11 @@ private fun WorkoutMonthCalendar(
                                 modifier = Modifier
                                     .size(36.dp)
                                     .clip(CircleShape)
-                                    .then(if (isSelected) Modifier.background(accentBrush) else Modifier)
+                                    .then(if (isSelected) Modifier.background(selectedDayBg, CircleShape) else Modifier)
                                     .then(
                                         if (isToday && !isSelected) {
-                                            Modifier.border(1.5.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                                            // 今日墨色实心圆（Daylet 式），选中态让位琥珀底
+                                            Modifier.background(MaterialTheme.colorScheme.onSurface, CircleShape)
                                         } else {
                                             Modifier
                                         },
@@ -453,13 +444,13 @@ private fun WorkoutMonthCalendar(
                                             else -> FontWeight.Medium
                                         },
                                         color = when {
-                                            isSelected -> MaterialTheme.colorScheme.onTertiary
+                                            isSelected -> if (dark) AccentInk else Color.White
                                             !inMonth -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
-                                            isToday -> MaterialTheme.colorScheme.onSurface
+                                            isToday -> if (dark) AccentInk else MaterialTheme.colorScheme.surface
                                             else -> MaterialTheme.colorScheme.onSurfaceVariant
                                         },
                                     )
-                                    // 有记录日小圆点（选中态藏在琥珀底里）
+                                    // 有记录日小圆点（选中态藏在墨底里）
                                     Box(
                                         modifier = Modifier
                                             .padding(top = 2.dp)
@@ -467,7 +458,7 @@ private fun WorkoutMonthCalendar(
                                             .clip(CircleShape)
                                             .background(
                                                 when {
-                                                    isSelected -> MaterialTheme.colorScheme.onTertiary.copy(alpha = 0.55f)
+                                                    isSelected -> (if (dark) AccentInk else Color.White).copy(alpha = 0.55f)
                                                     dotColor != null -> dotColor
                                                     else -> Color.Transparent
                                                 },
@@ -484,7 +475,7 @@ private fun WorkoutMonthCalendar(
     }
 }
 
-// 当日记录卡：日期标题 + 记录行（左滑删除）+ 记录锻炼主按钮（琥珀渐变）
+// 当日记录卡：日期标题 + 记录行（左滑删除）+ 记录锻炼主按钮
 @Composable
 private fun DayRecordsCard(
     date: LocalDate,
@@ -492,14 +483,6 @@ private fun DayRecordsCard(
     onLog: () -> Unit,
     onDelete: (Long) -> Unit,
 ) {
-    val dark = LocalDarkTheme.current
-    val shadow = if (dark) ShadowDark else ShadowLight
-    val accentBrush = Brush.verticalGradient(
-        listOf(
-            if (dark) AccentGradientStartDark else AccentGradientStart,
-            if (dark) AccentGradientEndDark else AccentGradientEnd,
-        ),
-    )
     GlassCard(modifier = Modifier.fillMaxWidth(), cornerRadius = 24) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -527,33 +510,21 @@ private fun DayRecordsCard(
                 }
             }
             Spacer(Modifier.height(12.dp))
-            // 记录锻炼主按钮（琥珀强调色预算之一）
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(46.dp)
-                    .shadow(4.dp, RoundedCornerShape(23.dp), ambientColor = shadow, spotColor = shadow)
-                    .clip(RoundedCornerShape(23.dp))
-                    .background(accentBrush)
-                    .pressScale(onPress = onLog, pressedScale = 0.96f),
-                contentAlignment = Alignment.Center,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            // 记录锻炼主按钮：统一品牌蓝主按钮
+            PrimaryPillButton(
+                text = stringResource(R.string.wk_log),
+                onClick = onLog,
+                fullWidth = true,
+                height = 52.dp,
+                leading = {
                     Icon(
                         imageVector = Icons.Outlined.Add,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onTertiary,
                         modifier = Modifier.size(18.dp),
                     )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(R.string.wk_log),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onTertiary,
-                    )
-                }
-            }
+                },
+            )
         }
     }
 }
@@ -820,14 +791,6 @@ private fun LogWorkoutSheet(
     onDeleteTag: (Long) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val dark = LocalDarkTheme.current
-    val shadow = if (dark) ShadowDark else ShadowLight
-    val accentBrush = Brush.verticalGradient(
-        listOf(
-            if (dark) AccentGradientStartDark else AccentGradientStart,
-            if (dark) AccentGradientEndDark else AccentGradientEnd,
-        ),
-    )
 
     var customMode by remember { mutableStateOf(false) }
     var customName by remember { mutableStateOf("") }
@@ -846,18 +809,15 @@ private fun LogWorkoutSheet(
     var renameTagId by remember { mutableStateOf<Long?>(null) }
     var renameText by remember { mutableStateOf("") }
 
-    ModalBottomSheet(
+    LumiSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = if (dark) DarkSheetBg else LightSheetBg,
+        scrollable = true,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
-                .navigationBarsPadding()
-                .padding(bottom = 16.dp),
+                .navigationBarsPadding(),
         ) {
             Text(
                 text = stringResource(R.string.wk_log),
@@ -978,101 +938,75 @@ private fun LogWorkoutSheet(
                 onSelect = { intensity = it },
             )
             Spacer(Modifier.height(22.dp))
-            // 保存（琥珀强调色预算之二；无效输入降透明置灰）
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .alpha(if (valid) 1f else 0.45f)
-                    .shadow(4.dp, RoundedCornerShape(24.dp), ambientColor = shadow, spotColor = shadow)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(accentBrush)
-                    .then(
-                        if (valid) {
-                            Modifier.pressScale(
-                                onPress = {
-                                    if (customMode && selectedTagId == null && customName.trim().isNotEmpty()) {
-                                        onAddTag(customName.trim())
-                                    }
-                                    onSave(
-                                        name.trim(),
-                                        if (customMode) CUSTOM_KEY else selectedKey,
-                                        colorKey,
-                                        duration,
-                                        intensity,
-                                    )
-                                },
-                                pressedScale = 0.96f,
-                            )
-                        } else {
-                            Modifier
-                        },
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            // 保存：统一品牌蓝主按钮（无效输入禁用置灰）
+            PrimaryPillButton(
+                text = stringResource(R.string.sbe5fbb),
+                onClick = {
+                    if (customMode && selectedTagId == null && customName.trim().isNotEmpty()) {
+                        onAddTag(customName.trim())
+                    }
+                    onSave(
+                        name.trim(),
+                        if (customMode) CUSTOM_KEY else selectedKey,
+                        colorKey,
+                        duration,
+                        intensity,
+                    )
+                },
+                enabled = valid,
+                fullWidth = true,
+                height = 52.dp,
+                leading = {
                     Icon(
                         imageVector = Icons.Filled.Check,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onTertiary,
                         modifier = Modifier.size(18.dp),
                     )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(R.string.sbe5fbb),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onTertiary,
-                    )
-                }
-            }
+                },
+            )
         }
     }
 
     // 长按自定义标签：重命名 / 删除
     if (renameTagId != null) {
-        androidx.compose.material3.AlertDialog(
+        LumiDialog(
             onDismissRequest = { renameTagId = null },
-            title = { Text(renameText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold) },
-            text = {
-                androidx.compose.material3.OutlinedTextField(
-                    value = renameText,
-                    onValueChange = { renameText = it },
-                    singleLine = true,
-                    placeholder = { Text(stringResource(R.string.wk_name_hint)) },
-                    // 模仿音乐页「添加音乐」输入框：无边框灰底胶囊（用户要求）
-                    shape = RoundedCornerShape(50),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
-                        unfocusedContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
-                    ),
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-                )
-            },
-            confirmButton = {
-                androidx.compose.material3.TextButton(
-                    onClick = {
-                        onRenameTag(renameTagId!!, renameText.trim())
-                        renameTagId = null
-                    },
-                ) { Text(stringResource(R.string.sbe5fbb)) }
-            },
-            dismissButton = {
-                androidx.compose.material3.TextButton(
-                    onClick = {
-                        onDeleteTag(renameTagId!!)
-                        renameTagId = null
-                    },
-                ) {
-                    Text(
+            title = stringResource(R.string.s95b351),
+            actions = {
+                LumiDialogButtons {
+                    SecondaryButton(
+                        text = stringResource(R.string.s625fb2),
+                        onClick = { renameTagId = null },
+                        modifier = Modifier.weight(1f),
+                    )
+                    DangerButton(
                         text = stringResource(R.string.wk_delete),
-                        color = MaterialTheme.colorScheme.error,
+                        onClick = {
+                            onDeleteTag(renameTagId!!)
+                            renameTagId = null
+                        },
+                        modifier = Modifier.weight(1f),
                     )
                 }
             },
-        )
+        ) {
+            AppTextField(
+                value = renameText,
+                onValueChange = { renameText = it },
+                hint = stringResource(R.string.wk_name_hint),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(14.dp))
+            PrimaryPillButton(
+                text = stringResource(R.string.sbe5fbb),
+                onClick = {
+                    onRenameTag(renameTagId!!, renameText.trim())
+                    renameTagId = null
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 
@@ -1085,7 +1019,7 @@ private fun SheetSectionLabel(text: String) {
     )
 }
 
-// 项目 chip：马卡龙底 + 图标/名称，选中全饱和 + 墨描边
+// 项目 chip：pastel 底 + 图标/名称，选中全饱和填充 + 深浅自适应字
 @Composable
 private fun PresetChip(
     icon: ImageVector,
@@ -1097,13 +1031,8 @@ private fun PresetChip(
 ) {
     Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (selected) color else color.copy(alpha = 0.45f))
-            .border(
-                1.5.dp,
-                if (selected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f) else Color.Transparent,
-                RoundedCornerShape(14.dp),
-            )
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (selected) color else color.copy(alpha = 0.14f))
             .then(
                 if (onLongClick != null) {
                     Modifier.pointerInput(Unit) {
@@ -1122,7 +1051,7 @@ private fun PresetChip(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = onInk(color),
+            tint = if (selected) onInk(color) else color,
             modifier = Modifier.size(15.dp),
         )
         Spacer(Modifier.width(5.dp))
@@ -1130,7 +1059,7 @@ private fun PresetChip(
             text = label,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-            color = onInk(color),
+            color = if (selected) onInk(color) else color,
         )
     }
 }
@@ -1167,44 +1096,13 @@ private fun SheetInput(
     hint: String,
     keyboardType: KeyboardType = KeyboardType.Text,
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                if (LocalDarkTheme.current) {
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                },
-            )
-            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-    ) {
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth(),
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                color = MaterialTheme.colorScheme.onSurface,
-            ),
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = ImeAction.Done),
-            decorationBox = { inner ->
-                Box {
-                    if (value.isEmpty()) {
-                        Text(
-                            text = hint,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    inner()
-                }
-            },
-        )
-    }
+    AppTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = Modifier.fillMaxWidth(),
+        hint = hint,
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = ImeAction.Done),
+    )
 }
 
 
@@ -1251,6 +1149,7 @@ private fun ColumnScope.StatsTab(viewModel: WorkoutViewModel) {
             EmptyState(
                 title = stringResource(R.string.sx_wk_empty),
                 description = stringResource(R.string.sx_wk_empty_d),
+                icon = Icons.AutoMirrored.Outlined.DirectionsRun,
             )
         } else {
             Spacer(Modifier.height(14.dp))

@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Celebration
 import androidx.compose.material.icons.outlined.ChildCare
-import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -49,6 +48,7 @@ import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Work
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -72,24 +72,26 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cn.wangce.lumi.R
 import cn.wangce.lumi.data.local.ExpectEntity
+import cn.wangce.lumi.ui.components.AppFab
+import cn.wangce.lumi.ui.components.AppTextField
+import cn.wangce.lumi.ui.components.DangerButton
 import cn.wangce.lumi.ui.components.EmptyState
 import cn.wangce.lumi.ui.components.GlassCard
+import cn.wangce.lumi.ui.components.LumiDialog
+import cn.wangce.lumi.ui.components.LumiDialogButtons
+import cn.wangce.lumi.ui.components.PrimaryPillButton
+import cn.wangce.lumi.ui.components.SecondaryButton
 import cn.wangce.lumi.ui.components.SegmentedControl
 import cn.wangce.lumi.ui.components.SegmentedOption
 import cn.wangce.lumi.ui.components.bottomNavSpace
 import cn.wangce.lumi.ui.components.pressScale
-import cn.wangce.lumi.ui.theme.DarkSheetBg
-import cn.wangce.lumi.ui.theme.LightSheetBg
+import cn.wangce.lumi.ui.theme.AccentInk
+import cn.wangce.lumi.ui.theme.AccentPaper
 import cn.wangce.lumi.ui.theme.LocalDarkTheme
-import cn.wangce.lumi.ui.theme.PillBgDark
-import cn.wangce.lumi.ui.theme.PillBgLight
-import cn.wangce.lumi.ui.theme.ShadowDark
-import cn.wangce.lumi.ui.theme.ShadowLight
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -158,7 +160,6 @@ private fun expectIconOf(item: ExpectEntity): ImageVector {
 // 期待页（顶层 Tab）：分类筛选 + 两列倒计时卡 + 详情/编辑/删除弹层
 @Composable
 fun ExpectScreen(onBack: (() -> Unit)? = null, viewModel: ExpectsViewModel = hiltViewModel()) {
-    val dark = LocalDarkTheme.current
     val expects by viewModel.expects.collectAsStateWithLifecycle()
 
     var category by remember { mutableStateOf("all") }
@@ -223,15 +224,16 @@ fun ExpectScreen(onBack: (() -> Unit)? = null, viewModel: ExpectsViewModel = hil
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
                     color = if (active) {
-                        MaterialTheme.colorScheme.surface
+                        if (LocalDarkTheme.current) AccentInk else Color.White
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
                     modifier = Modifier
                         .clip(RoundedCornerShape(percent = 50))
                         .background(
+                            // 选中 = 墨黑填充（黑即强调，不随分屏强调色漂移）
                             if (active) {
-                                if (dark) PillBgDark else PillBgLight
+                                if (LocalDarkTheme.current) AccentPaper else AccentInk
                             } else {
                                 MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
                             },
@@ -254,7 +256,8 @@ fun ExpectScreen(onBack: (() -> Unit)? = null, viewModel: ExpectsViewModel = hil
                 EmptyState(
                     title = stringResource(R.string.sx_exp_empty),
                     description = stringResource(R.string.sx_exp_empty_d),
-                    modifier = Modifier.align(Alignment.Center),
+                    modifier = Modifier.fillMaxSize(),
+                    icon = Icons.Outlined.Celebration,
                 )
             } else {
                 LazyVerticalGrid(
@@ -270,27 +273,23 @@ fun ExpectScreen(onBack: (() -> Unit)? = null, viewModel: ExpectsViewModel = hil
                 }
             }
 
-            // 悬浮添加钮（墨色圆底 + 白加号，与底部导航黑钮同语言）
-            Box(
+            // 悬浮添加钮：品牌蓝圆钮（AppFab 统一样式）
+            AppFab(
+                onClick = { editorFor = null; editorOpen = true },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(bottom = bottomNavSpace() - 20.dp, end = 2.dp)
-                    .size(52.dp)
-                    .shadow(
-                        6.dp,
-                        CircleShape,
-                        ambientColor = if (dark) ShadowDark else ShadowLight,
-                        spotColor = if (dark) ShadowDark else ShadowLight,
-                    )
-                    .clip(CircleShape)
-                    .background(if (dark) PillBgDark else PillBgLight)
-                    .pressScale(onPress = { editorFor = null; editorOpen = true }),
-                contentAlignment = Alignment.Center,
+                    // 顶层 Tab 有底栏 → 让位底栏；独立进入页无底栏 → 只留系统手势条安全距
+                    .padding(
+                        bottom = if (onBack != null) 20.dp else bottomNavSpace() - 20.dp,
+                        // end 2dp：外层 Column 已有 20dp 水平内边距，合计 22dp，与其它页 FAB 对齐
+                        end = 2.dp,
+                    ),
+                size = 52.dp,
             ) {
                 Icon(
                     imageVector = Icons.Filled.Add,
                     contentDescription = stringResource(R.string.sx_add),
-                    tint = MaterialTheme.colorScheme.surface,
+                    tint = LocalContentColor.current,
                     modifier = Modifier.size(24.dp),
                 )
             }
@@ -456,7 +455,6 @@ private fun DetailDialog(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val dark = LocalDarkTheme.current
     val days = (item.targetEpochDay - today.toEpochDay()).toInt()
     val date = LocalDate.ofEpochDay(item.targetEpochDay)
     val locales = LocalConfiguration.current.locales
@@ -478,99 +476,56 @@ private fun DetailDialog(
         else -> stringResource(R.string.sx_today)
     }
 
-    Dialog(onDismissRequest = onClose) {
+    LumiDialog(
+        onDismissRequest = onClose,
+        title = item.title,
+        actions = {
+            LumiDialogButtons {
+                // 删除：次级破坏性（error 淡底胶囊）
+                DangerButton(
+                    text = stringResource(R.string.s2f4aad),
+                    onClick = onDelete,
+                    modifier = Modifier.weight(1f),
+                )
+                // 编辑：主操作品牌蓝胶囊
+                PrimaryPillButton(
+                    text = stringResource(R.string.s95b351),
+                    onClick = onEdit,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        },
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                DayNumberRow(days = days, big = true)
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = CardDateFmt.format(date) + " · " + weekFmt.format(date),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Icon(
+                imageVector = expectIconOf(item),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(44.dp),
+            )
+        }
+        Spacer(Modifier.height(16.dp))
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(if (dark) DarkSheetBg else LightSheetBg)
-                .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
-                .padding(18.dp),
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
+                .padding(horizontal = 14.dp, vertical = 4.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = item.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                Icon(
-                    imageVector = Icons.Outlined.Close,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .size(22.dp)
-                        .clickable(onClick = onClose),
-                )
-            }
-            Spacer(Modifier.height(14.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    DayNumberRow(days = days, big = true)
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        text = CardDateFmt.format(date) + " · " + weekFmt.format(date),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Icon(
-                    imageVector = expectIconOf(item),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(44.dp),
-                )
-            }
-            Spacer(Modifier.height(16.dp))
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
-                    .padding(horizontal = 14.dp, vertical = 4.dp),
-            ) {
-                InfoRow(label = stringResource(R.string.sx_target), value = CardDateFmt.format(date))
-                InfoDivider()
-                InfoRow(label = stringResource(R.string.sx_count), value = countdownText)
-                InfoDivider()
-                InfoRow(label = stringResource(R.string.sx_cat), value = catLabel)
-            }
-            Spacer(Modifier.height(18.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
-                        .pressScale(onPress = onDelete),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = stringResource(R.string.s2f4aad),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (dark) PillBgDark else PillBgLight)
-                        .pressScale(onPress = onEdit),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = stringResource(R.string.s95b351),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.surface,
-                    )
-                }
-            }
+            InfoRow(label = stringResource(R.string.sx_target), value = CardDateFmt.format(date))
+            InfoDivider()
+            InfoRow(label = stringResource(R.string.sx_count), value = countdownText)
+            InfoDivider()
+            InfoRow(label = stringResource(R.string.sx_cat), value = catLabel)
         }
     }
 }
@@ -616,7 +571,6 @@ private fun EditorDialog(
     onClose: () -> Unit,
     onSave: (ExpectEntity) -> Unit,
 ) {
-    val dark = LocalDarkTheme.current
     val today = remember { LocalDate.now() }
     var title by remember { mutableStateOf(editing?.title ?: "") }
     var iconKey by remember {
@@ -634,67 +588,19 @@ private fun EditorDialog(
     var m by remember { mutableStateOf(initDate.monthValue.toString()) }
     var d by remember { mutableStateOf(initDate.dayOfMonth.toString()) }
 
-    Dialog(onDismissRequest = onClose) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(if (dark) DarkSheetBg else LightSheetBg)
-                .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
-                .padding(18.dp)
-                .verticalScroll(rememberScrollState()),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = stringResource(if (editing == null) R.string.sx_add else R.string.sx_edit_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                )
-                Icon(
-                    imageVector = Icons.Outlined.Close,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .size(22.dp)
-                        .clickable(onClick = onClose),
-                )
-            }
-            Spacer(Modifier.height(16.dp))
+    LumiDialog(
+        onDismissRequest = onClose,
+        title = stringResource(if (editing == null) R.string.sx_add else R.string.sx_edit_title),
+    ) {
+        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             FieldLabel(stringResource(R.string.sx_name))
             Spacer(Modifier.height(6.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)),
-            ) {
-                BasicTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    singleLine = true,
-                    decorationBox = { inner ->
-                        Box {
-                            if (title.isEmpty()) {
-                                Text(
-                                    text = stringResource(R.string.sx_name_hint),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                )
-                            }
-                            inner()
-                        }
-                    },
-                )
-            }
+            AppTextField(
+                value = title,
+                onValueChange = { title = it },
+                modifier = Modifier.fillMaxWidth(),
+                hint = stringResource(R.string.sx_name_hint),
+            )
             Spacer(Modifier.height(14.dp))
             FieldLabel(stringResource(R.string.s5ef69f))
             Spacer(Modifier.height(6.dp))
@@ -771,43 +677,34 @@ private fun EditorDialog(
                 )
             }
             Spacer(Modifier.height(20.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(46.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (dark) PillBgDark else PillBgLight)
-                    .pressScale(onPress = {
-                        val yy = y.toIntOrNull() ?: return@pressScale
-                        val mm = m.toIntOrNull() ?: return@pressScale
-                        val dd = d.toIntOrNull() ?: return@pressScale
-                        val target = try {
-                            LocalDate.of(yy, mm, dd)
-                        } catch (e: Exception) {
-                            return@pressScale
-                        }
-                        if (title.isBlank()) return@pressScale
-                        onSave(
-                            ExpectEntity(
-                                id = editing?.id ?: 0L,
-                                title = title.trim(),
-                                emoji = editing?.emoji ?: "🎉",
-                                iconKey = iconKey,
-                                targetEpochDay = target.toEpochDay(),
-                                category = cat,
-                                createdAt = editing?.createdAt ?: System.currentTimeMillis(),
-                            ),
-                        )
-                    }),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = stringResource(R.string.sbe5fbb),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.surface,
-                )
-            }
+            // 保存：主操作品牌蓝胶囊
+            PrimaryPillButton(
+                text = stringResource(R.string.sbe5fbb),
+                onClick = {
+                    val yy = y.toIntOrNull() ?: return@PrimaryPillButton
+                    val mm = m.toIntOrNull() ?: return@PrimaryPillButton
+                    val dd = d.toIntOrNull() ?: return@PrimaryPillButton
+                    val target = try {
+                        LocalDate.of(yy, mm, dd)
+                    } catch (e: Exception) {
+                        return@PrimaryPillButton
+                    }
+                    if (title.isBlank()) return@PrimaryPillButton
+                    onSave(
+                        ExpectEntity(
+                            id = editing?.id ?: 0L,
+                            title = title.trim(),
+                            emoji = editing?.emoji ?: "🎉",
+                            iconKey = iconKey,
+                            targetEpochDay = target.toEpochDay(),
+                            category = cat,
+                            createdAt = editing?.createdAt ?: System.currentTimeMillis(),
+                        ),
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                height = 46.dp,
+            )
         }
     }
 }
@@ -829,39 +726,14 @@ private fun DateField(
     hint: String,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f))
-            .padding(horizontal = 10.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        BasicTextField(
-            value = value,
-            onValueChange = { v -> onValueChange(v.filter { it.isDigit() }) },
-            modifier = Modifier.fillMaxWidth(),
-            textStyle = MaterialTheme.typography.bodyMedium.copy(
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-            ),
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            decorationBox = { inner ->
-                Box(contentAlignment = Alignment.Center) {
-                    if (value.isEmpty()) {
-                        Text(
-                            text = hint,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                    inner()
-                }
-            },
-        )
-    }
+    // 统一走 AppTextField：同款圆角 / 内边距 / 聚焦态 / 墨色光标，仅额外限制纯数字
+    AppTextField(
+        value = value,
+        onValueChange = { v -> onValueChange(v.filter { it.isDigit() }) },
+        modifier = modifier,
+        hint = hint,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+    )
 }
 
 // 删除确认弹层
@@ -871,54 +743,31 @@ private fun DeleteConfirmDialog(
     onCancel: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    val dark = LocalDarkTheme.current
-    Dialog(onDismissRequest = onCancel) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(if (dark) DarkSheetBg else LightSheetBg)
-                .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
-                .padding(18.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.del_confirm, item.title),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Spacer(Modifier.height(18.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(42.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
-                        .pressScale(onPress = onCancel),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = stringResource(R.string.sx_cancel),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(42.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (dark) PillBgDark else PillBgLight)
-                        .pressScale(onPress = onConfirm),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = stringResource(R.string.s2f4aad),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.surface,
-                    )
-                }
+    LumiDialog(
+        onDismissRequest = onCancel,
+        actions = {
+            LumiDialogButtons {
+                // 取消：次级按钮
+                SecondaryButton(
+                    text = stringResource(R.string.sx_cancel),
+                    onClick = onCancel,
+                    modifier = Modifier.weight(1f),
+                    height = 42.dp,
+                )
+                // 确认删除：次级破坏性（error 淡底胶囊，与习惯页删除弹窗同语言）
+                DangerButton(
+                    text = stringResource(R.string.s2f4aad),
+                    onClick = onConfirm,
+                    modifier = Modifier.weight(1f),
+                    height = 42.dp,
+                )
             }
-        }
+        },
+    ) {
+        Text(
+            text = stringResource(R.string.del_confirm, item.title),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
     }
 }

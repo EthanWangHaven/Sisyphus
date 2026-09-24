@@ -43,6 +43,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,12 +74,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cn.wangce.lumi.R
 import cn.wangce.lumi.ui.components.GlassCard
-import cn.wangce.lumi.ui.theme.LocalDarkTheme
-import cn.wangce.lumi.ui.theme.PillBgDark
-import cn.wangce.lumi.ui.theme.PillBgLight
-import cn.wangce.lumi.ui.theme.ShadowDark
-import cn.wangce.lumi.ui.theme.ShadowLight
-import java.io.File
+import cn.wangce.lumi.ui.components.InteractionButton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -89,7 +85,6 @@ private val HeartPink = Color(0xFFF28B82)
 // 赛博撸宠：实拍绿幕序列帧宠物（猫/狗）+ 滑动撸（爱心）、喂食、换宠物
 @Composable
 fun PetScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit) {
-    val dark = LocalDarkTheme.current
     val running by viewModel.running.collectAsStateWithLifecycle()
     var elapsedSec by remember { mutableIntStateOf(0) }
     LaunchedEffect(running) {
@@ -128,10 +123,16 @@ fun PetScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit) {
         onDispose { purrPlayer?.release() }
     }
 
-    // 撸动结束 0.9s 后回到待机
+    // 最近一次撸动时间戳：滑动中持续刷新（只在 LaunchedEffect 协程里读，不参与组合）
+    var lastPetAt by remember { mutableLongStateOf(0L) }
+
+    // 撸动期间保持 pet；停手 0.9s 后回到待机
+    // （旧实现只 delay 一次 900ms，持续滑动约 1s 就会被切回 idle）
     LaunchedEffect(mood) {
         if (mood == "pet") {
-            delay(900)
+            while (mood == "pet" && System.currentTimeMillis() - lastPetAt < 900) {
+                delay(60)
+            }
             if (mood == "pet") {
                 mood = "idle"
                 hearts.clear()
@@ -150,25 +151,15 @@ fun PetScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit) {
             null
         } else {
             val prefix = if (kind == 0) "cat" else "dog"
+            // 直接用 AssetManager 解码（API 28+ 有该重载），不经 cacheDir 中转：
+            // cacheDir 覆盖安装不会清空，早期版本的残缺素材会因 (!f.exists()) 永不刷新，
+            // 导致循环时长达不到原视频总时长（表现为只播放一部分）。
             runCatching {
-                // ImageDecoder.createSource 无 InputStream 重载，先落 cacheDir 再按 File 解码
-                val f = File(context.cacheDir, "pet_${prefix}_$mood.webp")
-                if (!f.exists()) {
-                    context.assets.open("pet/${prefix}_$mood.webp").use { input ->
-                        f.outputStream().use { input.copyTo(it) }
-                    }
-                }
-                ImageDecoder.createSource(f)
+                ImageDecoder.createSource(context.assets, "pet/${prefix}_$mood.webp")
             }.getOrElse {
                 // 狗素材未就绪时回退猫
                 runCatching {
-                    val f = File(context.cacheDir, "pet_cat_$mood.webp")
-                    if (!f.exists()) {
-                        context.assets.open("pet/cat_$mood.webp").use { input ->
-                            f.outputStream().use { input.copyTo(it) }
-                        }
-                    }
-                    ImageDecoder.createSource(f)
+                    ImageDecoder.createSource(context.assets, "pet/cat_$mood.webp")
                 }.getOrNull()
             }
         }
@@ -265,12 +256,15 @@ fun PetScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit) {
                         var heartId = 0
                         detectDragGestures(
                             onDragStart = {
+                                lastPetAt = System.currentTimeMillis()
                                 mood = "pet"
                                 purring = true
                                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             },
                             onDrag = { change, _ ->
                                 val now = System.currentTimeMillis()
+                                // 持续滑动 → 一直刷新保活时间戳，pet 段不会中途切回 idle
+                                lastPetAt = now
                                 if (now - lastHeart > 90) {
                                     lastHeart = now
                                     hearts.add(Heart(heartId++, change.position.x, change.position.y, now))
@@ -291,8 +285,8 @@ fun PetScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit) {
         // 底部操作
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             InteractionButton(stringResource(R.string.focus_pet_feed),
-                { Icon(Icons.Outlined.Restaurant, null, tint = MaterialTheme.colorScheme.surface, modifier = Modifier.size(18.dp)) },
-                dark, onClick = {
+                Icons.Outlined.Restaurant,
+                onClick = {
                     if (!foodAnim.isRunning) {
                         scope.launch {
                             foodAnim.snapTo(0f)
@@ -303,8 +297,8 @@ fun PetScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit) {
                     }
                 })
             InteractionButton(stringResource(R.string.focus_pet_switch),
-                { Icon(Icons.Outlined.Pets, null, tint = MaterialTheme.colorScheme.surface, modifier = Modifier.size(18.dp)) },
-                dark, onClick = {
+                Icons.Outlined.Pets,
+                onClick = {
                     scope.launch {
                         appearScale.animateTo(0.72f, tween(160))
                         // 复位状态：换宠后旧 eat 段 drawable 被替换，其"播完回 idle"回调不会再触发
@@ -315,24 +309,6 @@ fun PetScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit) {
                 })
         }
         Spacer(Modifier.weight(1.2f))
-    }
-}
-
-@Composable
-private fun InteractionButton(label: String, icon: @Composable () -> Unit, dark: Boolean, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier.height(46.dp)
-            .shadow(5.dp, RoundedCornerShape(14.dp), spotColor = if (dark) ShadowDark else ShadowLight)
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (dark) PillBgDark else PillBgLight)
-            .clickable(onClick = onClick).padding(horizontal = 22.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            icon(); Spacer(Modifier.width(8.dp))
-            Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.surface)
-        }
     }
 }
 

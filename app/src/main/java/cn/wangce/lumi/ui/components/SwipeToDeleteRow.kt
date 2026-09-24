@@ -28,7 +28,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import cn.wangce.lumi.R
-import cn.wangce.lumi.ui.theme.MorandiPink
 
 // 左滑（EndToStart）露出删除背景，滑到底直接删除——待办列表与备忘录列表共用
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,6 +35,7 @@ import cn.wangce.lumi.ui.theme.MorandiPink
 fun SwipeToDeleteRow(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
+    cornerRadius: Int = 12,
     content: @Composable () -> Unit,
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
@@ -65,7 +65,7 @@ fun SwipeToDeleteRow(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(cornerRadius.dp))
                     .alpha(bgAlpha)
                     .background(MaterialTheme.colorScheme.error),
                 contentAlignment = Alignment.CenterEnd,

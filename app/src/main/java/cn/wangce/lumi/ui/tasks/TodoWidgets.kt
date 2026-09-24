@@ -32,18 +32,12 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,23 +46,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cn.wangce.lumi.R
 import cn.wangce.lumi.data.local.TodoEntity
+import cn.wangce.lumi.ui.components.AppTextField
+import cn.wangce.lumi.ui.components.DangerButton
 import cn.wangce.lumi.ui.components.GlassCard
-import cn.wangce.lumi.ui.theme.DarkSheetBg
-import cn.wangce.lumi.ui.theme.LightSheetBg
-import cn.wangce.lumi.ui.theme.LocalDarkTheme
-import cn.wangce.lumi.ui.theme.MorandiPink
-import cn.wangce.lumi.ui.theme.PillBgDark
-import cn.wangce.lumi.ui.theme.PillBgLight
+import cn.wangce.lumi.ui.components.LumiDialog
+import cn.wangce.lumi.ui.components.LumiDialogButtons
+import cn.wangce.lumi.ui.components.LumiSheet
+import cn.wangce.lumi.ui.components.PrimaryPillButton
+import cn.wangce.lumi.ui.components.SecondaryButton
+import cn.wangce.lumi.ui.components.SelectableChip
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -77,7 +71,7 @@ import java.util.Locale
 internal fun todoDayLabel(context: Context, createdAt: Long): String =
     SimpleDateFormat(context.getString(R.string.date_md), Locale.getDefault()).format(Date(createdAt))
 
-// 筛选胶囊组：未完成 / 已完成 / 全部（独立胶囊按钮，iOS 软 UI 风格）
+// 筛选胶囊组：未完成 / 已完成 / 全部（统一 SelectableChip 主筛选模式）
 @Composable
 internal fun FilterTabs(
     current: TodoFilter,
@@ -90,43 +84,11 @@ internal fun FilterTabs(
     )
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         options.forEach { (value, label) ->
-            val selected = value == current
-            // 选中态：玻璃底 + 深色描边 + 深色文字（参考图 chip 风格）
-            val bg by animateColorAsState(
-                targetValue = if (selected) {
-                    MaterialTheme.colorScheme.surface.copy(alpha = 0.55f)
-                } else {
-                    Color.Transparent
-                },
-                animationSpec = tween(250),
-                label = "pillBg",
+            SelectableChip(
+                text = label,
+                selected = value == current,
+                onClick = { onSelect(value) },
             )
-            val borderColor by animateColorAsState(
-                targetValue = if (selected) {
-                    MaterialTheme.colorScheme.onSurface
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                },
-                animationSpec = tween(250),
-                label = "pillBorder",
-            )
-            Box(
-                modifier = Modifier
-                    .height(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(bg)
-                    .border(1.dp, borderColor, RoundedCornerShape(12.dp))
-                    .clickable { onSelect(value) }
-                    .padding(horizontal = 22.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                    color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
         }
     }
 }
@@ -152,7 +114,7 @@ internal fun TodoRow(
                     onClick = onEdit,
                     onLongClick = { menuOpen = true },
                 ),
-            cornerRadius = 18,
+            cornerRadius = 12,
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
@@ -254,30 +216,15 @@ internal fun TodoEditSheet(
     onDismiss: () -> Unit,
 ) {
     var text by remember(todo.id) { mutableStateOf(todo.title) }
-    ModalBottomSheet(
+    LumiSheet(
         onDismissRequest = onDismiss,
-        containerColor = if (LocalDarkTheme.current) DarkSheetBg else LightSheetBg,
+        title = stringResource(R.string.sb994c3),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 24.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.sb994c3),
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Spacer(Modifier.height(16.dp))
-            OutlinedTextField(
+        Column(modifier = Modifier.fillMaxWidth()) {
+            AppTextField(
                 value = text,
                 onValueChange = { text = it },
                 modifier = Modifier.fillMaxWidth(),
-                textStyle = MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.onSurface,
-                ),
-                singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { if (text.isNotBlank()) onSave(text) }),
             )
@@ -285,19 +232,16 @@ internal fun TodoEditSheet(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.s625fb2)) }
+                SecondaryButton(text = stringResource(R.string.s625fb2), onClick = onDismiss)
                 Spacer(Modifier.width(8.dp))
-                // 主操作黑胶囊：浅色黑底白字 / 深色浅底黑字
-                val dark = LocalDarkTheme.current
-                Button(
-                    onClick = { if (text.isNotBlank()) onSave(text) },
-                    shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (dark) PillBgDark else PillBgLight,
-                        contentColor = MaterialTheme.colorScheme.surface,
-                    ),
-                ) { Text(stringResource(R.string.sbe5fbb)) }
+                // 主操作墨黑胶囊，内容为空时禁用
+                PrimaryPillButton(
+                    text = stringResource(R.string.sbe5fbb),
+                    onClick = { onSave(text) },
+                    enabled = text.isNotBlank(),
+                )
             }
         }
     }
@@ -310,17 +254,26 @@ internal fun TodoDeleteDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
+    LumiDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.s329fde)) },
-        text = { Text(stringResource(R.string.del_confirm, todo.title)) },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text(stringResource(R.string.s2f4aad), color = MorandiPink)
+        title = stringResource(R.string.s329fde),
+        actions = {
+            LumiDialogButtons {
+                // 取消：白底 hairline 胶囊
+                SecondaryButton(
+                    text = stringResource(R.string.s625fb2),
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                )
+                // 删除：破坏性操作，橙红底胶囊
+                DangerButton(
+                    text = stringResource(R.string.s2f4aad),
+                    onClick = onConfirm,
+                    modifier = Modifier.weight(1f),
+                )
             }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.s625fb2)) }
-        },
-    )
+    ) {
+        Text(stringResource(R.string.del_confirm, todo.title))
+    }
 }

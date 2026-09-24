@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -55,18 +56,15 @@ import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.SelfImprovement
 import androidx.compose.material.icons.outlined.SmokingRooms
 import androidx.compose.material.icons.outlined.WorkOutline
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -85,6 +83,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.layer.drawLayer
@@ -108,14 +107,19 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cn.wangce.lumi.R
+import cn.wangce.lumi.ui.components.AppTextField
 import cn.wangce.lumi.ui.components.GlassCard
+import cn.wangce.lumi.ui.components.InteractionButton
+import cn.wangce.lumi.ui.components.LumiDialog
+import cn.wangce.lumi.ui.components.LumiDialogButtons
+import cn.wangce.lumi.ui.components.PrimaryPillButton
+import cn.wangce.lumi.ui.components.SecondaryButton
+import cn.wangce.lumi.ui.theme.AccentInk
+import cn.wangce.lumi.ui.theme.AccentPaper
 import cn.wangce.lumi.ui.theme.DarkOnSurface
 import cn.wangce.lumi.ui.theme.LightOnSurface
 import cn.wangce.lumi.ui.theme.LocalDarkTheme
-import cn.wangce.lumi.ui.theme.PillBgDark
-import cn.wangce.lumi.ui.theme.PillBgLight
-import cn.wangce.lumi.ui.theme.ShadowDark
-import cn.wangce.lumi.ui.theme.ShadowLight
+import cn.wangce.lumi.ui.theme.RadiusControl
 import java.io.File
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -147,7 +151,6 @@ private val ReceiptPaper = Color(0xFFFFFFFF)
 @Composable
 fun PrintScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit) {
     val context = LocalContext.current
-    val dark = LocalDarkTheme.current
     val haptic = LocalHapticFeedback.current
     val stats by viewModel.stats.collectAsStateWithLifecycle()
     val customCategories by viewModel.customCategories.collectAsStateWithLifecycle()
@@ -271,7 +274,7 @@ fun PrintScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit)
                                 .border(
                                     1.dp,
                                     MaterialTheme.colorScheme.outlineVariant,
-                                    RoundedCornerShape(10.dp),
+                                    RoundedCornerShape(RadiusControl),
                                 )
                                 .wrapContentSize(Alignment.Center),
                             singleLine = true,
@@ -280,6 +283,7 @@ fun PrintScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit)
                                 textAlign = TextAlign.Center,
                                 color = MaterialTheme.colorScheme.onSurface,
                             ),
+                            cursorBrush = SolidColor(if (LocalDarkTheme.current) AccentPaper else AccentInk),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         )
                         Spacer(Modifier.width(4.dp))
@@ -302,7 +306,7 @@ fun PrintScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit)
                                 .border(
                                     1.dp,
                                     MaterialTheme.colorScheme.outlineVariant,
-                                    RoundedCornerShape(10.dp),
+                                    RoundedCornerShape(RadiusControl),
                                 )
                                 .wrapContentSize(Alignment.Center),
                             singleLine = true,
@@ -311,6 +315,7 @@ fun PrintScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit)
                                 textAlign = TextAlign.Center,
                                 color = MaterialTheme.colorScheme.onSurface,
                             ),
+                            cursorBrush = SolidColor(if (LocalDarkTheme.current) AccentPaper else AccentInk),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         )
                         Spacer(Modifier.width(8.dp))
@@ -350,37 +355,26 @@ fun PrintScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit)
 
             Spacer(Modifier.height(16.dp))
             val canPrint = items.any { it.checked && it.minutes > 0 }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .height(52.dp)
-                    .shadow(5.dp, RoundedCornerShape(16.dp), spotColor = if (dark) ShadowDark else ShadowLight)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color.Black)
-                    .clickable(enabled = canPrint) {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ||
-                            ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
-                        ) {
-                            phase = "preview"
-                        } else {
-                            storagePerm.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        }
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Print, null, tint = MaterialTheme.colorScheme.surface, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(R.string.focus_print_btn),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.surface,
-                    )
-                }
-            }
+            PrimaryPillButton(
+                text = stringResource(R.string.focus_print_btn),
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ||
+                        ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        phase = "preview"
+                    } else {
+                        storagePerm.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    }
+                },
+                modifier = Modifier.padding(horizontal = 20.dp),
+                enabled = canPrint,
+                fullWidth = true,
+                height = 52.dp,
+                leading = {
+                    Icon(Icons.Outlined.Print, null, tint = MaterialTheme.colorScheme.onTertiary, modifier = Modifier.size(18.dp))
+                },
+            )
             Spacer(Modifier.height(20.dp))
 
             if (showAddDialog) {
@@ -487,8 +481,7 @@ fun PrintScreen(viewModel: FocusViewModel = hiltViewModel(), onBack: () -> Unit)
             if (doneReady) {
                 InteractionButton(
                     label = stringResource(R.string.focus_print_done),
-                    icon = { Icon(Icons.Outlined.Check, null, tint = MaterialTheme.colorScheme.surface, modifier = Modifier.size(18.dp)) },
-                    dark = dark,
+                    icon = Icons.Outlined.Check,
                     onClick = onBack,
                 )
             } else {
@@ -794,106 +787,85 @@ private fun AddItemDialog(onDismiss: () -> Unit, onConfirm: (String, Int, Int) -
     var label by remember { mutableStateOf(PRINT_CATEGORIES.first()) }
     var count by remember { mutableStateOf("1") }
     var minutes by remember { mutableStateOf("") }
-    AlertDialog(
+    LumiDialog(
         onDismissRequest = onDismiss,
-        // 与专注页自定义项目弹窗一致的背景色（默认色偏粉）
-        containerColor = MaterialTheme.colorScheme.surface,
-        title = { Text(stringResource(R.string.focus_print_add)) },
-        text = {
-            Column {
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = it },
-                ) {
-                    OutlinedTextField(
-                        value = printLabel(label),
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(stringResource(R.string.focus_print_add_activity)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(),
-                    )
-                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        PRINT_CATEGORIES.forEach { key ->
-                            DropdownMenuItem(
-                                text = { Text(printLabel(key)) },
-                                onClick = {
-                                    label = key
-                                    expanded = false
-                                },
-                            )
-                        }
-                    }
-                }
-                Spacer(Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
-                        value = count,
-                        onValueChange = { s -> count = s.filter(Char::isDigit).take(3) },
-                        label = { Text(stringResource(R.string.focus_print_add_count)) },
-                        singleLine = true,
-                        shape = RoundedCornerShape(16.dp),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
-                    )
-                    OutlinedTextField(
-                        value = minutes,
-                        onValueChange = { s -> minutes = s.filter(Char::isDigit).take(4) },
-                        label = { Text(stringResource(R.string.focus_print_min_hint)) },
-                        singleLine = true,
-                        shape = RoundedCornerShape(16.dp),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
+        title = stringResource(R.string.focus_print_add),
+        actions = {
+            LumiDialogButtons {
+                SecondaryButton(
+                    text = stringResource(R.string.s625fb2),
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                )
+                PrimaryPillButton(
+                    text = stringResource(R.string.focus_print_add_btn),
+                    onClick = {
+                        onConfirm(
+                            label,
+                            (count.toIntOrNull() ?: 1).coerceAtLeast(1),
+                            minutes.toIntOrNull() ?: 0,
+                        )
+                    },
+                    enabled = (minutes.toIntOrNull() ?: 0) > 0,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        },
+    ) {
+        // 下拉选择触发器：AppTextField 同款语言（灰底圆角 12 + 尾部箭头），Box 包裹 DropdownMenu 定位
+        Box {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .clip(RoundedCornerShape(RadiusControl))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable { expanded = true }
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    text = printLabel(label),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                PRINT_CATEGORIES.forEach { key ->
+                    DropdownMenuItem(
+                        text = { Text(printLabel(key)) },
+                        onClick = {
+                            label = key
+                            expanded = false
+                        },
                     )
                 }
             }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onConfirm(
-                        label,
-                        (count.toIntOrNull() ?: 1).coerceAtLeast(1),
-                        minutes.toIntOrNull() ?: 0,
-                    )
-                },
-                enabled = (minutes.toIntOrNull() ?: 0) > 0,
-            ) { Text(stringResource(R.string.focus_print_add_btn)) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.s625fb2)) }
-        },
-    )
-}
-
-// 底部互动胶囊按钮（与撸宠/吸烟页同款语言）
-@Composable
-private fun InteractionButton(label: String, icon: @Composable () -> Unit, dark: Boolean, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .height(46.dp)
-            .shadow(5.dp, RoundedCornerShape(14.dp), spotColor = if (dark) ShadowDark else ShadowLight)
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (dark) PillBgDark else PillBgLight)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 22.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            icon()
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.surface,
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            AppTextField(
+                value = count,
+                onValueChange = { s -> count = s.filter(Char::isDigit).take(3) },
+                hint = stringResource(R.string.focus_print_add_count),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f),
+            )
+            AppTextField(
+                value = minutes,
+                onValueChange = { s -> minutes = s.filter(Char::isDigit).take(4) },
+                hint = stringResource(R.string.focus_print_min_hint),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f),
             )
         }
     }
 }
+
+
 
 // 分类显示名（与专注页弹窗一致：库中存中文键，展示层按语言映射）
 @Composable

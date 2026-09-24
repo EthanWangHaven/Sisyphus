@@ -31,7 +31,7 @@
     <string name="s7e66eb">Notes</string>
     <string name="sb60ec8">Todos</string>
     <string name="se217c5">Focus</string>
-    <string name="s8e5e86">Moments</string>
+    <string name="s8e5e86">Memories</string>
     <string name="s49e233">Moments</string>
     <string name="s95521b">Music</string>
     <string name="scd27ec">Habits</string>
@@ -41,6 +41,7 @@
 
     <!-- ============ Home ============ -->
     <string name="sfad522">Done</string>
+    <string name="today_todo">Today\'s todos</string>
     <string name="s48b826">No todos yet</string>
     <string name="s48c14f">Add tasks on the Notes &amp; Todos page</string>
     <string name="s714675">Tap the + button to add tasks</string>
@@ -105,6 +106,7 @@
     <string name="sd64fda">Moment deleted</string>
     <string name="s0cd71b">No moments yet</string>
     <string name="s2295dc">Capture a Moment</string>
+    <string name="moment_title_hint">Title</string>
     <string name="s605687">Save this moment</string>
     <string name="s2f3a89">Close preview</string>
     <string name="s833152">Remove photo</string>

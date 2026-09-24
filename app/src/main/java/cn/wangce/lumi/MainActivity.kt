@@ -1,5 +1,6 @@
 package cn.wangce.lumi
 
+import android.app.Activity
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
@@ -41,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -52,6 +54,7 @@ import cn.wangce.lumi.data.settings.ThemeStore
 import cn.wangce.lumi.navigation.LumiNavGraph
 import cn.wangce.lumi.navigation.Routes
 import cn.wangce.lumi.ui.components.BottomNavBar
+import androidx.core.view.WindowCompat
 import cn.wangce.lumi.ui.theme.DarkGradientBottom
 import cn.wangce.lumi.ui.theme.DarkGradientMid
 import cn.wangce.lumi.ui.theme.DarkGradientTop
@@ -112,6 +115,17 @@ fun LumiRoot(darkTheme: Boolean) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: Routes.TASKS
     val showBottomBar = Routes.topLevel.contains(currentRoute)
+
+    // 深色沉浸页路由（瞬间列表/详情）：仅当主题为深色时，状态栏图标保持浅色；
+    // 浅色主题下这些页也是浅底，图标需跟随为深色，否则白底上看不见。
+    val darkStatusRoutes = remember { setOf(Routes.MOMENTS, Routes.MOMENT_DETAIL) }
+    val view = LocalView.current
+    LaunchedEffect(currentRoute, darkTheme) {
+        val forceLightIcons = darkTheme && currentRoute in darkStatusRoutes
+        val window = (view.context as Activity).window
+        WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars =
+            !forceLightIcons && !darkTheme
+    }
 
     // 导航图内容层：底部导航栏用它做 backdrop 磨砂模糊（每帧录制页面绘制）
     val navContentLayer = rememberGraphicsLayer()

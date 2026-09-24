@@ -11,7 +11,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,12 +35,10 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -60,10 +57,24 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cn.wangce.lumi.R
 import cn.wangce.lumi.data.local.TodoEntity
+import cn.wangce.lumi.ui.components.AppTextField
+import cn.wangce.lumi.ui.components.LumiDialog
+import cn.wangce.lumi.ui.components.LumiDialogButtons
+import cn.wangce.lumi.ui.components.PrimaryPillButton
+import cn.wangce.lumi.ui.components.SecondaryButton
+import cn.wangce.lumi.ui.components.SelectableChip
 import cn.wangce.lumi.ui.components.bottomNavSpace
+import cn.wangce.lumi.ui.components.pressScale
 import cn.wangce.lumi.ui.components.EmptyState
 import cn.wangce.lumi.ui.components.GlassCard
 import cn.wangce.lumi.ui.components.SwipeToDeleteRow
+import cn.wangce.lumi.ui.theme.AccentInk
+import cn.wangce.lumi.ui.theme.AccentPaper
+import cn.wangce.lumi.ui.theme.DurEnter
+import cn.wangce.lumi.ui.theme.LocalDarkTheme
+import cn.wangce.lumi.ui.theme.PagePadding
+import cn.wangce.lumi.ui.theme.SpaceS
+import cn.wangce.lumi.ui.theme.SpaceXS
 
 // 待办页（首页）
 @Composable
@@ -91,41 +102,46 @@ fun TasksScreen(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = PagePadding),
     ) {
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(SpaceXS))
         WelcomeHeader(
-            greeting = greeting,
             searchOpen = searchOpen,
             onToggleSearch = { searchOpen = !searchOpen },
             onOpenSettings = onOpenSettings,
-            onEditGreeting = { showGreetingEditor = true },
         )
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(SpaceS))
         AnimatedVisibility(
             visible = searchOpen,
-            enter = expandVertically(tween(250)) + fadeIn(tween(250)),
-            exit = shrinkVertically(tween(250)) + fadeOut(tween(250)),
+            enter = expandVertically(tween(DurEnter)) + fadeIn(tween(DurEnter)),
+            exit = shrinkVertically(tween(DurEnter)) + fadeOut(tween(DurEnter)),
         ) {
             SearchField(query = query, onQueryChange = viewModel::setQuery)
         }
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(SpaceS))
         WeekBar()
-        Spacer(Modifier.height(10.dp))
-        ProgressWeatherCard(pending = stats.first, done = stats.second, weather = weather)
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(SpaceXS))
+        ProgressWeatherCard(
+            pending = stats.first,
+            done = stats.second,
+            weather = weather,
+            greeting = greeting ?: DEFAULT_GREETING,
+            onEditGreeting = { showGreetingEditor = true },
+        )
+        Spacer(Modifier.height(SpaceS))
         QuickEntriesRow(
             onOpenExpects = onOpenExpects,
             onOpenMusic = onOpenMusic,
             onOpenHabits = onOpenHabits,
         )
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(SpaceS))
 
         if (todos.isEmpty()) {
             EmptyState(
                 title = stringResource(R.string.s48b826),
                 description = stringResource(R.string.s48c14f),
                 modifier = Modifier.weight(1f),
+                icon = Icons.Outlined.TaskAlt,
             )
         } else {
             LazyColumn(
@@ -181,37 +197,30 @@ fun TasksScreen(
     }
 }
 
-// 顶部欢迎区：Hi, WangCe（长按可自定义）+ 右侧设置/搜索圆钮
-@OptIn(ExperimentalFoundationApi::class)
+// 顶部工具栏：左侧品牌字标 + 右侧搜索/设置圆钮（问候语已移入 hero 卡）
 @Composable
 private fun WelcomeHeader(
-    greeting: String?,
     searchOpen: Boolean,
     onToggleSearch: () -> Unit,
     onOpenSettings: () -> Unit,
-    onEditGreeting: () -> Unit,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
+        // 品牌字标：左上角锚点，避免整行右偏留白
         Text(
-            text = greeting ?: DEFAULT_GREETING,
+            text = stringResource(R.string.app_name),
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier
-                .weight(1f)
-                .combinedClickable(
-                    onClick = {},
-                    onLongClick = onEditGreeting, // 长按欢迎词：自定义弹窗
-                ),
         )
-        // 搜索开关（右上角，设置入口右侧为全 App 唯一设置；圆形细描边框）
+        Spacer(Modifier.weight(1f))
+        // 搜索开关（右上角，设置入口右侧为全 App 唯一设置）
+        // 注意：边框由 GlassCard 自带，此处不可再叠 .border()，否则会同时出现「圆 + 圆角方」两圈框
         GlassCard(
             modifier = Modifier
                 .size(44.dp)
-                .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f), CircleShape)
-                .clip(CircleShape)
-                .clickable(onClick = onToggleSearch),
-            cornerRadius = 22,
+                .pressScale(onPress = onToggleSearch),
+            shape = CircleShape,
+            elevation = 0,
         ) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Icon(
@@ -226,15 +235,14 @@ private fun WelcomeHeader(
                 )
             }
         }
-        Spacer(Modifier.width(10.dp))
-        // 设置入口（全 App 唯一，首页右上角最右；圆形细描边框）
+        Spacer(Modifier.width(SpaceXS))
+        // 设置入口（全 App 唯一，首页右上角最右）
         GlassCard(
             modifier = Modifier
                 .size(44.dp)
-                .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f), CircleShape)
-                .clip(CircleShape)
-                .clickable(onClick = onOpenSettings),
-            cornerRadius = 22,
+                .pressScale(onPress = onOpenSettings),
+            shape = CircleShape,
+            elevation = 0,
         ) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Icon(
@@ -255,40 +263,21 @@ private fun SearchField(
     onQueryChange: (String) -> Unit,
 ) {
     GlassCard(modifier = Modifier.fillMaxWidth(), cornerRadius = 16) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Search,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(Modifier.width(10.dp))
-            BasicTextField(
-                value = query,
-                onValueChange = onQueryChange,
-                modifier = Modifier.weight(1f),
-                textStyle = MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.onSurface,
-                ),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                singleLine = true,
-                decorationBox = { inner ->
-                    Box {
-                        if (query.isEmpty()) {
-                            Text(
-                                text = stringResource(R.string.s5b27c9),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        inner()
-                    }
-                },
-            )
-        }
+        AppTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier.fillMaxWidth(),
+            hint = stringResource(R.string.s5b27c9),
+            bare = true,
+            leading = {
+                Icon(
+                    imageVector = Icons.Outlined.Search,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp),
+                )
+            },
+        )
     }
 }
 
@@ -312,80 +301,47 @@ private fun GreetingDialog(
     onDismiss: () -> Unit,
 ) {
     var text by remember { mutableStateOf(current ?: DEFAULT_GREETING) }
-    AlertDialog(
+    LumiDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.greeting_edit_title)) },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    singleLine = true,
-                    placeholder = {
-                        Text(
-                            text = stringResource(R.string.greeting_hint),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    },
+        title = stringResource(R.string.greeting_edit_title),
+        actions = {
+            LumiDialogButtons {
+                // 取消：白底 hairline 胶囊
+                SecondaryButton(
+                    text = stringResource(R.string.s625fb2),
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
                 )
-                Spacer(Modifier.height(12.dp))
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    GREETING_PRESETS.forEach { preset ->
-                        GreetingPresetChip(
-                            label = preset,
-                            selected = text == preset,
-                            onClick = { text = preset },
-                        )
-                    }
-                }
+                // 保存：主操作品牌蓝胶囊
+                PrimaryPillButton(
+                    text = stringResource(R.string.sbe5fbb),
+                    onClick = { onSave(text) },
+                    modifier = Modifier.weight(1f),
+                )
             }
         },
-        confirmButton = {
-            TextButton(onClick = { onSave(text) }) { Text(stringResource(R.string.sbe5fbb)) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.s625fb2)) }
-        },
-    )
-}
-
-// 快捷候选词胶囊：细描边圆角，选中淡色填充
-@Composable
-private fun GreetingPresetChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(
-                if (selected) {
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
-                } else {
-                    Color.Transparent
-                },
-            )
-            .border(
-                1.dp,
-                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
-                RoundedCornerShape(50),
-            )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
+        Column {
+            AppTextField(
+                value = text,
+                onValueChange = { text = it },
+                modifier = Modifier.fillMaxWidth(),
+                hint = stringResource(R.string.greeting_hint),
+            )
+            Spacer(Modifier.height(12.dp))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                GREETING_PRESETS.forEach { preset ->
+                    SelectableChip(
+                        text = preset,
+                        selected = text == preset,
+                        onClick = { text = preset },
+                    )
+                }
+            }
+        }
     }
 }
+

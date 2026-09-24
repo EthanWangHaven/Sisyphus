@@ -38,27 +38,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TileMode
-import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.layer.GraphicsLayer
-import androidx.compose.ui.graphics.layer.drawLayer
-import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.boundsInRoot
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import cn.wangce.lumi.R
 import cn.wangce.lumi.navigation.Routes
+import cn.wangce.lumi.ui.theme.AccentInk
 import cn.wangce.lumi.ui.theme.DurState
+import cn.wangce.lumi.ui.theme.LiquidGlassRimDark
+import cn.wangce.lumi.ui.theme.LiquidGlassRimLight
+import cn.wangce.lumi.ui.theme.LiquidGlassTintDark
+import cn.wangce.lumi.ui.theme.LiquidGlassTintLight
 import cn.wangce.lumi.ui.theme.LocalDarkTheme
 import cn.wangce.lumi.ui.theme.ShadowDark
 import cn.wangce.lumi.ui.theme.ShadowLight
@@ -86,8 +81,10 @@ private val rightNavItems = listOf(
 )
 
 // 分体式导航（对标黑白极简参考）：
-// 左右两个半圆弧磨砂玻璃段（backdrop 高斯模糊 + 半透明底 + 细描边）+ 中间独立黑色实底圆钮
-// 选中态 = tertiary 墨色图标 + 小圆点；按压 0.98 spring 反馈
+// 左右两个半圆弧液态玻璃段（背板高斯模糊 + 边缘折射 + 镜面描边）+ 中间独立墨黑实底圆钮
+// 选中态 = 墨色图标 + 墨色小圆点（黑即强调，全 App 底栏不出现彩色）；按压 0.98 spring 反馈
+// 玻璃色调只跟随 App 主题：黑底页（瞬间/详情）不再强制切深色玻璃，
+// 否则浅色模式下点进黑底页时底栏会整块变黑（视觉上像底栏消失）
 @Composable
 fun BottomNavBar(
     currentRoute: String,
@@ -96,12 +93,15 @@ fun BottomNavBar(
     onNavigate: (String) -> Unit,
     onHomeClick: () -> Unit,
 ) {
-    val dark = LocalDarkTheme.current
+    val darkSurface = LocalDarkTheme.current
     val arcShape = RoundedCornerShape(28.dp) // 高 56dp → 28dp 即半圆弧端
-    val arcShadow = if (dark) ShadowDark else ShadowLight
-    // 磨砂玻璃：backdrop 模糊层 + 低透明度底 + 细描边
-    val arcBg = if (dark) Color(0x991F1F1F) else Color(0x99FFFFFF)
-    val arcBorder = MaterialTheme.colorScheme.outline
+    val arcShadow = if (darkSurface) ShadowDark else ShadowLight
+    // 液态玻璃：低透明度色调让背板折射透出，高光边取左上亮/右下暗的斜向渐变
+    val arcTint = if (darkSurface) LiquidGlassTintDark else LiquidGlassTintLight
+    val arcRim = if (darkSurface) LiquidGlassRimDark else LiquidGlassRimLight
+    // 选中态墨色：浅色玻璃上用墨黑，深色玻璃上用纸白（黑即强调，不用彩色 accent）
+    val activeTint = if (darkSurface) Color(0xFFFFFFFF) else AccentInk
+    val idleTint = if (darkSurface) Color(0x8AFFFFFF) else MaterialTheme.colorScheme.onSurfaceVariant
 
     Row(
         modifier = modifier
@@ -111,35 +111,19 @@ fun BottomNavBar(
             .height(56.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // 左半圆弧（备忘录/专注）：backdrop 磨砂（API 31+ 录制导航图内容高斯模糊）
-        var leftBounds by remember { mutableStateOf(Rect.Zero) }
-        var leftSize by remember { mutableStateOf(IntSize.Zero) }
-        val leftBlurLayer = rememberGraphicsLayer()
-        Box(
+        // 左半圆弧（备忘录/专注）：液态玻璃（背板模糊 + 边缘折射）
+        LiquidGlassSurface(
             modifier = Modifier
                 .weight(1f)
                 .height(56.dp)
-                .onGloballyPositioned {
-                    leftBounds = it.boundsInRoot()
-                    leftSize = it.size
-                }
-                .shadow(6.dp, arcShape, ambientColor = arcShadow, spotColor = arcShadow)
-                .clip(arcShape)
-                .drawBehind {
-                    val content = contentLayer ?: return@drawBehind
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        leftBlurLayer.record(leftSize) {
-                            translate(-leftBounds.left, -leftBounds.top) {
-                                drawLayer(content)
-                            }
-                        }
-                        leftBlurLayer.renderEffect = BlurEffect(24f, 24f, TileMode.Decal)
-                        drawLayer(leftBlurLayer)
-                    }
-                }
-                .background(arcBg)
-                .border(1.dp, arcBorder, arcShape),
-            contentAlignment = Alignment.Center,
+                .shadow(6.dp, arcShape, ambientColor = arcShadow, spotColor = arcShadow),
+            backdrop = contentLayer,
+            cornerRadius = 28.dp,
+            blur = 20f,
+            refraction = 8.dp,
+            chromatic = 0.04f,
+            tint = arcTint,
+            rimTint = arcRim,
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -150,6 +134,8 @@ fun BottomNavBar(
                     NavIcon(
                         item = item,
                         isActive = currentRoute == item.route,
+                        activeTint = activeTint,
+                        idleTint = idleTint,
                         onClick = { onNavigate(item.route) },
                     )
                 }
@@ -164,49 +150,33 @@ fun BottomNavBar(
                 .size(56.dp)
                 .shadow(6.dp, CircleShape, ambientColor = arcShadow, spotColor = arcShadow)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.tertiary)
+                .background(if (darkSurface) Color(0xFFF5F5F5) else AccentInk)
                 .pressScale(onPress = onHomeClick, pressedScale = 0.96f),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = Icons.Outlined.Home,
                 contentDescription = stringResource(R.string.s1a183a),
-                tint = MaterialTheme.colorScheme.onTertiary,
+                tint = if (darkSurface) AccentInk else Color.White,
                 modifier = Modifier.size(24.dp),
             )
         }
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // 右半圆弧（瞬间/锻炼）：backdrop 磨砂（API 31+ 录制导航图内容高斯模糊）
-        var rightBounds by remember { mutableStateOf(Rect.Zero) }
-        var rightSize by remember { mutableStateOf(IntSize.Zero) }
-        val rightBlurLayer = rememberGraphicsLayer()
-        Box(
+        // 右半圆弧（瞬间/锻炼）：液态玻璃（背板模糊 + 边缘折射）
+        LiquidGlassSurface(
             modifier = Modifier
                 .weight(1f)
                 .height(56.dp)
-                .onGloballyPositioned {
-                    rightBounds = it.boundsInRoot()
-                    rightSize = it.size
-                }
-                .shadow(6.dp, arcShape, ambientColor = arcShadow, spotColor = arcShadow)
-                .clip(arcShape)
-                .drawBehind {
-                    val content = contentLayer ?: return@drawBehind
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        rightBlurLayer.record(rightSize) {
-                            translate(-rightBounds.left, -rightBounds.top) {
-                                drawLayer(content)
-                            }
-                        }
-                        rightBlurLayer.renderEffect = BlurEffect(24f, 24f, TileMode.Decal)
-                        drawLayer(rightBlurLayer)
-                    }
-                }
-                .background(arcBg)
-                .border(1.dp, arcBorder, arcShape),
-            contentAlignment = Alignment.Center,
+                .shadow(6.dp, arcShape, ambientColor = arcShadow, spotColor = arcShadow),
+            backdrop = contentLayer,
+            cornerRadius = 28.dp,
+            blur = 20f,
+            refraction = 8.dp,
+            chromatic = 0.04f,
+            tint = arcTint,
+            rimTint = arcRim,
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -217,6 +187,8 @@ fun BottomNavBar(
                     NavIcon(
                         item = item,
                         isActive = currentRoute == item.route,
+                        activeTint = activeTint,
+                        idleTint = idleTint,
                         onClick = { onNavigate(item.route) },
                     )
                 }
@@ -229,6 +201,8 @@ fun BottomNavBar(
 private fun NavIcon(
     item: NavItem,
     isActive: Boolean,
+    activeTint: Color,
+    idleTint: Color,
     onClick: () -> Unit,
 ) {
     val scale by animateFloatAsState(
@@ -236,9 +210,9 @@ private fun NavIcon(
         animationSpec = tween(DurState),
         label = "navScale",
     )
-    // 选中小圆点用墨色强调色（colorScheme.tertiary）
+    // 选中小圆点 = 墨色强调（黑即强调，全 App 底栏不出现彩色）
     val dotColor by animateColorAsState(
-        targetValue = if (isActive) MaterialTheme.colorScheme.tertiary else Color.Transparent,
+        targetValue = if (isActive) activeTint else Color.Transparent,
         animationSpec = tween(DurState),
         label = "navDot",
     )
@@ -252,8 +226,7 @@ private fun NavIcon(
         Icon(
             imageVector = item.icon,
             contentDescription = stringResource(item.labelRes),
-            tint = if (isActive) MaterialTheme.colorScheme.tertiary
-                   else MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = if (isActive) activeTint else idleTint,
             modifier = Modifier
                 .size(24.dp)
                 .scale(scale),

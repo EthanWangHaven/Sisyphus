@@ -3,11 +3,9 @@ package cn.wangce.lumi.ui.moments
 import android.graphics.Bitmap
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -17,7 +15,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,16 +22,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
-import androidx.compose.foundation.lazy.staggeredgrid.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
@@ -43,8 +39,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -54,44 +50,37 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cn.wangce.lumi.R
 import cn.wangce.lumi.data.image.ImageStore
 import cn.wangce.lumi.data.local.MomentEntity
 import cn.wangce.lumi.data.local.MomentImageEntity
+import cn.wangce.lumi.ui.components.AppFab
 import cn.wangce.lumi.ui.components.EmptyState
-import cn.wangce.lumi.ui.components.GlassCard
 import cn.wangce.lumi.ui.components.SwipeToDeleteRow
 import cn.wangce.lumi.ui.components.bottomNavSpace
-import cn.wangce.lumi.ui.components.pressScale
-import cn.wangce.lumi.ui.notes.formatRelativeTime
-import cn.wangce.lumi.ui.theme.DurState
-import cn.wangce.lumi.ui.theme.LocalDarkTheme
-import cn.wangce.lumi.ui.theme.PillBgDark
-import cn.wangce.lumi.ui.theme.PillBgLight
-import cn.wangce.lumi.ui.theme.ShadowDark
-import cn.wangce.lumi.ui.theme.ShadowLight
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import androidx.compose.ui.text.font.FontWeight
+import java.util.Calendar
+import cn.wangce.lumi.ui.theme.LocalAuxText
+import cn.wangce.lumi.ui.theme.LocalDarkTheme
+import cn.wangce.lumi.ui.theme.DurState
 
-// App 内强制深色只作用于 Compose 主题层（不改 Activity uiMode），
-// 以 LumiTheme 提供的 LocalDarkTheme 为准
-@Composable
-internal fun isDarkTheme(): Boolean = LocalDarkTheme.current
+// 回忆页（对标「回忆」App 设计）：时间线列表，左侧大日期数字 + 中缩略图 + 右标题/碎碎念。
+// 配色跟随主题：浅色模式为浅底（透出根层天空渐变，与其他浅色页同语言），
+// 深色模式才用沉浸黑底（#111111，比全局深底更沉一档）。
+private val MomentsBgDark = Color(0xFF111111)
 
-// 瞬间页：小红书式两列瀑布流（单图封面卡）+ FAB 发布 + 左滑删除 + 点开横滑看全部图片
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MomentsScreen(
@@ -103,12 +92,15 @@ fun MomentsScreen(
     val saving by viewModel.saving.collectAsStateWithLifecycle()
     val imageStore = viewModel.imageStore
 
+    // 主题跟随：浅色模式走浅底（透出根层天空渐变），深色模式才用沉浸黑底
+    val dark = LocalDarkTheme.current
+    val fg = if (dark) Color.White else MaterialTheme.colorScheme.onSurface
+
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     var showCompose by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<MomentEntity?>(null) }
-    var pendingDelete by remember { mutableStateOf<MomentEntity?>(null) }
 
     // 非组合 lambda（点击回调）里不能调 stringResource，先在组合期取好
     val deletedMsg = stringResource(R.string.sd64fda)
@@ -129,6 +121,8 @@ fun MomentsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            // 浅色模式不铺底色，让根层天空渐变透上来（与其他浅色页一致）；深色模式才铺沉浸黑
+            .then(if (dark) Modifier.background(MomentsBgDark) else Modifier)
             .statusBarsPadding(),
     ) {
         Column(
@@ -136,39 +130,44 @@ fun MomentsScreen(
                 .fillMaxSize()
                 .padding(horizontal = 20.dp),
         ) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(14.dp))
+            // 页头：大标题 + 计数副标（一页一重心，标题即最大字）
             Text(
                 text = stringResource(R.string.s8e5e86),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = fg,
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(14.dp))
+            // 细分隔线：页头与列表之间的呼吸
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(fg.copy(alpha = 0.08f)),
+            )
+            Spacer(Modifier.height(6.dp))
 
             if (moments.isEmpty()) {
+                // 空态走全局组件：颜色跟随主题（浅色墨字/深色白字），留白纪律与渐入统一
                 EmptyState(
                     title = stringResource(R.string.s0cd71b),
                     description = stringResource(R.string.s33930e),
+                    icon = Icons.Outlined.PhotoLibrary,
                     modifier = Modifier.weight(1f),
                 )
             } else {
-                // 两列瀑布流：新的在前，卡片高度随内容自然错落
-                LazyVerticalStaggeredGrid(
-                    columns = StaggeredGridCells.Fixed(2),
-                    modifier = Modifier.weight(1f),
-                    verticalItemSpacing = 12.dp,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
+                // 时间线列表：新的在前，每行 = 日期列 + 缩略图 + 标题/碎碎念
+                LazyColumn(modifier = Modifier.weight(1f)) {
                     items(moments, key = { it.id }) { moment ->
-                        SwipeToDeleteRow(onDelete = { requestDelete(moment) }) {
+                        SwipeToDeleteRow(onDelete = { requestDelete(moment) }, cornerRadius = 14) {
                             val paths = images[moment.id].orEmpty().map { it.imagePath }
-                            MomentCard(
+                            MomentRow(
                                 moment = moment,
                                 momentImages = images[moment.id].orEmpty(),
                                 imageStore = imageStore,
                                 onClick = {
                                     if (paths.isNotEmpty()) {
-                                        // 点进详情：上方大图横滑 + 下方地点/文字（小红书式，独立导航页）
                                         onOpenDetail(moment.id, 0)
                                     } else {
                                         editing = moment
@@ -182,7 +181,7 @@ fun MomentsScreen(
                             )
                         }
                     }
-                    item(span = StaggeredGridItemSpan.FullLine) {
+                    item {
                         Spacer(Modifier.height(bottomNavSpace()))
                     }
                 }
@@ -198,38 +197,27 @@ fun MomentsScreen(
             Snackbar(snackbarData = data)
         }
 
-        // 发布按钮：56dp 圆形 + 轻抬升暖阴影 + spring 按压缩放 0.98
-        Box(
+        // 发布按钮：浅色=墨黑锚点，深色=纸白反色（与底栏中央锚点同语言）
+        AppFab(
+            onClick = {
+                editing = null
+                showCompose = true
+            },
+            darkSurface = dark,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 // Snackbar 出现时上移避让，防止遮住「撤销」按钮
-                .offset(y = if (snackbarHostState.currentSnackbarData != null) -(64).dp else 0.dp)
-                .padding(end = 20.dp, bottom = bottomNavSpace())
-                .shadow(
-                    10.dp,
-                    CircleShape,
-                    ambientColor = if (LocalDarkTheme.current) ShadowDark else ShadowLight,
-                    spotColor = if (LocalDarkTheme.current) ShadowDark else ShadowLight,
-                )
-                .clip(CircleShape)
-                // 主操作黑胶囊：浅色黑底 / 深色浅底
-                .background(if (LocalDarkTheme.current) PillBgDark else PillBgLight)
-                .size(56.dp)
-                .pressScale(onPress = {
-                    editing = null
-                    showCompose = true
-                }),
-            contentAlignment = Alignment.Center,
+                .padding(end = 20.dp, bottom = bottomNavSpace()),
         ) {
             Icon(
                 imageVector = Icons.Filled.Add,
                 contentDescription = stringResource(R.string.s2295dc),
-                tint = MaterialTheme.colorScheme.surface,
+                tint = LocalContentColor.current,
             )
         }
     }
 
-    // 发布 / 编辑弹层
+    // 发布 / 编辑弹层（黑底皮肤）
     if (showCompose) {
         MomentComposeSheet(
             editing = editing,
@@ -256,89 +244,13 @@ fun MomentsScreen(
         )
     }
 
-    // 长按删除确认：半透明磨砂弹窗 + 豆沙红填充胶囊（低饱和不刺眼）
-    pendingDelete?.let { moment ->
-        Dialog(onDismissRequest = { pendingDelete = null }) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.outline,
-                        RoundedCornerShape(16.dp),
-                    )
-                    .padding(24.dp),
-            ) {
-                Column {
-                    Text(
-                        text = stringResource(R.string.sf3d3df),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = stringResource(R.string.sa695e5),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(Modifier.height(20.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        // 取消：纯文字按钮
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable { pendingDelete = null }
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.s625fb2),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        // 删除：语义红填充胶囊，轻抬升
-                        Box(
-                            modifier = Modifier
-                                .shadow(
-                                    4.dp,
-                                    RoundedCornerShape(12.dp),
-                                    ambientColor = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
-                                    spotColor = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
-                                )
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.error)
-                                .clickable {
-                                    pendingDelete = null
-                                    requestDelete(moment)
-                                }
-                                .padding(horizontal = 20.dp, vertical = 8.dp),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.s2f4aad),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onError,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-
 }
 
-// 瀑布流卡片（小红书式）：单图封面（首张，3:4）→ 文字摘要 → meta 行（地点 + 相对时间）
+// 时间线行：左日期列（大号「日」+ 年/月）→ 缩略图（首图 64dp）→ 标题 + 碎碎念 + 地点
 // 点击看图/编辑，长按编辑，删除走左滑
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun MomentCard(
+private fun MomentRow(
     moment: MomentEntity,
     momentImages: List<MomentImageEntity>,
     imageStore: ImageStore,
@@ -350,9 +262,29 @@ private fun MomentCard(
     val scale by animateFloatAsState(
         targetValue = if (pressed) 0.98f else 1f,
         animationSpec = tween(DurState),
-        label = "momentScale",
+        label = "momentRowScale",
     )
-    GlassCard(
+
+    // 主题跟随：深色沉浸页用白字梯度，浅色页用墨字 + 双档辅助灰
+    val dark = LocalDarkTheme.current
+    val aux = LocalAuxText.current
+    val fg = if (dark) Color.White else MaterialTheme.colorScheme.onSurface
+    val fgSecondary = if (dark) Color.White.copy(alpha = 0.42f) else aux.primary
+    val fgTertiary = if (dark) Color.White.copy(alpha = 0.32f) else aux.secondary
+    val tileBg = if (dark) Color.White.copy(alpha = 0.06f) else fg.copy(alpha = 0.05f)
+
+    val calendar = remember(moment.createdAt) {
+        Calendar.getInstance().apply { timeInMillis = moment.createdAt }
+    }
+    val day = calendar.get(Calendar.DAY_OF_MONTH)
+    val monthLabel = "${calendar.get(Calendar.YEAR)}/${calendar.get(Calendar.MONTH) + 1}"
+
+    // 标题 = 正文首行；其余行作碎碎念摘要
+    val lines = moment.content.lines()
+    val title = lines.firstOrNull().orEmpty().trim()
+    val snippet = lines.drop(1).joinToString("\n").trim()
+
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .scale(scale)
@@ -362,74 +294,90 @@ private fun MomentCard(
                 indication = null,
                 onClick = onClick,
                 onLongClick = onLongClick,
-            ),
-        cornerRadius = 16,
-        elevation = 4,
+            )
+            .padding(horizontal = 8.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            momentImages.firstOrNull()?.let { cover ->
-                Box {
-                    PathImage(
-                        path = cover.imagePath,
-                        imageStore = imageStore,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(0.75f),
-                    )
-                    // 多图角标：提示点开可横滑查看其余图片
-                    if (momentImages.size > 1) {
-                        Text(
-                            text = stringResource(R.string.photo_count_fmt, momentImages.size),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White,
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(8.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color(0x66000000))
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                        )
-                    }
-                }
-            }
-            Column(
+        // 左：日期列（大号「日」= 屏内第二视觉重心）
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.width(56.dp),
+        ) {
+            Text(
+                text = day.toString(),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = fg,
+            )
+            Text(
+                text = monthLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = fgTertiary,
+            )
+        }
+        Spacer(Modifier.width(16.dp))
+        // 中：缩略图（无图时用淡色占位块）
+        if (momentImages.isNotEmpty()) {
+            PathImage(
+                path = momentImages.first().imagePath,
+                imageStore = imageStore,
+                modifier = Modifier.size(72.dp),
+            )
+        } else {
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                    .size(72.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(tileBg),
+                contentAlignment = Alignment.Center,
             ) {
-                if (moment.content.isNotBlank()) {
-                    Text(
-                        text = moment.content,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Spacer(Modifier.height(6.dp))
-                }
-                // meta 行：地点 + 相对时间（小字弱化）
+                Icon(
+                    imageVector = Icons.Outlined.PhotoLibrary,
+                    contentDescription = null,
+                    tint = fgTertiary,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+        }
+        Spacer(Modifier.width(16.dp))
+        // 右：标题 + 碎碎念 + 地点
+        Column(modifier = Modifier.weight(1f)) {
+            if (title.isNotBlank()) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = fg,
+                )
+            }
+            if (snippet.isNotBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = snippet,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    color = fgSecondary,
+                )
+            }
+            if (moment.location.isNotBlank()) {
+                Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (moment.location.isNotBlank()) {
-                        Icon(
-                            imageVector = Icons.Outlined.LocationOn,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
-                            modifier = Modifier.size(11.dp),
-                        )
-                        Spacer(Modifier.width(2.dp))
-                        Text(
-                            text = moment.location,
-                            style = MaterialTheme.typography.labelSmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
-                        )
-                        Spacer(Modifier.width(8.dp))
-                    }
+                    Icon(
+                        imageVector = Icons.Outlined.LocationOn,
+                        contentDescription = null,
+                        tint = fgTertiary,
+                        modifier = Modifier.size(11.dp),
+                    )
+                    Spacer(Modifier.width(3.dp))
                     Text(
-                        text = formatRelativeTime(LocalContext.current, moment.createdAt),
+                        text = moment.location,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = fgTertiary,
                     )
                 }
             }
@@ -450,6 +398,8 @@ internal fun PathImage(
     }
     // 仅在传入 onClick 时才挂 clickable：enabled=false 的 clickable 仍会拦截
     // 父级 combinedClickable 的 tap（卡片图片区域点不动的问题根因）
+    // 占位底色跟随主题：深色（沉浸黑页/全局深色）用淡白，浅色用淡墨
+    val dark = LocalDarkTheme.current
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
@@ -471,7 +421,10 @@ internal fun PathImage(
         } ?: Box(
             modifier = Modifier
                 .matchParentSize()
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+                .background(
+                    if (dark) Color.White.copy(alpha = 0.07f)
+                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                ),
         )
     }
 }

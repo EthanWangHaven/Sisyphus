@@ -1,10 +1,11 @@
 package cn.wangce.lumi.ui.tasks
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,11 +46,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -58,14 +56,21 @@ import androidx.compose.ui.unit.sp
 import cn.wangce.lumi.R
 import cn.wangce.lumi.ui.components.GlassCard
 import cn.wangce.lumi.ui.components.pressScale
-import cn.wangce.lumi.ui.theme.AccentGradientEnd
-import cn.wangce.lumi.ui.theme.AccentGradientEndDark
-import cn.wangce.lumi.ui.theme.AccentGradientStart
-import cn.wangce.lumi.ui.theme.AccentGradientStartDark
+import cn.wangce.lumi.ui.theme.AccentInk
+import cn.wangce.lumi.ui.theme.AccentPaper
+import cn.wangce.lumi.ui.theme.CategoryColor
+import cn.wangce.lumi.ui.theme.CategoryGreen
+import cn.wangce.lumi.ui.theme.CategoryIndigo
+import cn.wangce.lumi.ui.theme.CategoryPink
 import cn.wangce.lumi.ui.theme.DurState
+import cn.wangce.lumi.ui.theme.LightCardBg
 import cn.wangce.lumi.ui.theme.LocalDarkTheme
+import cn.wangce.lumi.ui.theme.RadiusControl
+import cn.wangce.lumi.ui.theme.RadiusHero
+import cn.wangce.lumi.ui.theme.SpaceS
 import cn.wangce.lumi.ui.theme.ShadowDark
 import cn.wangce.lumi.ui.theme.ShadowLight
+import cn.wangce.lumi.ui.theme.squircle
 import java.net.HttpURLConnection
 import java.net.URL
 import java.time.LocalDate
@@ -171,7 +176,7 @@ fun fetchWeatherFromOpenMeteo(): WeatherData? = try {
 
 // ============ 本周日历胶囊栏 ============
 
-// 周一至周日 7 胶囊，今日琥珀渐变圆钮（品牌强调色本屏两处之一，呼应 Lumi 烛光）
+// 周一至周日 7 胶囊，今日 = 墨黑实底（黑即强调，全 App 不用彩色渐变大色块）
 @Composable
 fun WeekBar() {
     val dark = LocalDarkTheme.current
@@ -181,13 +186,9 @@ fun WeekBar() {
             today.minusDays((today.dayOfWeek.value - 1 - offset).toLong())
         }
     }
-    // 墨色玻璃：垂直渐变底 + 上亮下暗白描边，模拟玻璃受光
-    val todayBg = if (dark) {
-        Brush.verticalGradient(listOf(AccentGradientStartDark, AccentGradientEndDark))
-    } else {
-        Brush.verticalGradient(listOf(AccentGradientStart, AccentGradientEnd))
-    }
-    val todayBorder = Brush.verticalGradient(listOf(Color(0x59FFFFFF), Color(0x0DFFFFFF)))
+    // 今日墨黑锚点：浅色墨底白字，深色纸白底墨字
+    val todayBg = if (dark) AccentPaper else AccentInk
+    val todayFg = if (dark) AccentInk else Color.White
     // 周几标签（按当前语言取 一/二/… 或 Mon/Tue/…）
     val weekLabels = listOf(
         stringResource(R.string.s7941da),
@@ -218,18 +219,17 @@ fun WeekBar() {
                     .weight(1f)
                     .height(56.dp)
                     .shadow(
-                        3.dp,
-                        RoundedCornerShape(12.dp),
+                        6.dp,
+                        squircle(RadiusControl),
                         spotColor = if (dark) ShadowDark else ShadowLight,
                     )
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(squircle(RadiusControl))
                     .background(todayBg)
-                    .border(1.dp, todayBorder, RoundedCornerShape(12.dp))
             } else {
                 Modifier
                     .weight(1f)
                     .height(56.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(squircle(RadiusControl))
                     .background(bg)
             }
             Column(
@@ -241,7 +241,7 @@ fun WeekBar() {
                     text = weekLabels[day.dayOfWeek.value - 1],
                     style = MaterialTheme.typography.labelSmall,
                     color = if (isToday) {
-                        MaterialTheme.colorScheme.onTertiary.copy(alpha = 0.75f)
+                        todayFg.copy(alpha = 0.70f)
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
@@ -251,103 +251,144 @@ fun WeekBar() {
                     text = day.dayOfMonth.toString(),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (isToday) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onSurface,
+                    color = if (isToday) todayFg else MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
     }
 }
 
-// ============ 环形进度 + 天气主卡 ============
+// ============ hero 主卡 ============
 
-// 仪表盘主卡：左侧环形完成进度 + 右侧实时天气（无天气时几何点缀，布局高度稳定）
-// 黑色 hero 卡（对标参考图「350 天」黑卡）：tertiary 实底 + onTertiary 内容，深浅模式自动反色
+// 首页 hero 卡（对标组5 灰底白卡）：纯白卡 + 墨色大数字 + 极细描边（去掉蓝渐变与蓝投影，回归单强调色纪律）
+// 内容：问候语（长按编辑）+ 今日待办大数字 + 进度条；右侧实时天气，底部逐小时预报
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ProgressWeatherCard(pending: Int, done: Int, weather: WeatherData?) {
+fun ProgressWeatherCard(
+    pending: Int,
+    done: Int,
+    weather: WeatherData?,
+    greeting: String,
+    onEditGreeting: () -> Unit = {},
+) {
     val dark = LocalDarkTheme.current
-    val heroShape = RoundedCornerShape(24.dp)
-    val heroShadow = if (dark) ShadowDark else ShadowLight
-    Box(
+    val heroShape = squircle(RadiusHero)
+    val fg = MaterialTheme.colorScheme.onSurface
+    val trackColor = fg.copy(alpha = 0.10f)
+    val fillColor = fg
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(8.dp, heroShape, ambientColor = heroShadow, spotColor = heroShadow)
+            .shadow(8.dp, heroShape, ambientColor = ShadowLight, spotColor = ShadowLight)
             .clip(heroShape)
-            .background(MaterialTheme.colorScheme.tertiary),
+            .background(if (dark) MaterialTheme.colorScheme.surface else LightCardBg)
+            .border(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.10f), heroShape)
+            .padding(horizontal = 20.dp, vertical = 20.dp),
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            RingProgress(done = done, total = pending + done, modifier = Modifier.size(108.dp))
-            Spacer(Modifier.width(20.dp))
-            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                if (weather != null) {
-                    WeatherColumn(weather)
-                } else {
-                    GeometryDecoration()
-                }
-            }
-        }
-    }
-}
-
-// 环形进度：onTertiary 单色环（hero 卡内反色内容），中心 done/total +「已完成」
-@Composable
-private fun RingProgress(done: Int, total: Int, modifier: Modifier = Modifier) {
-    val target = if (total == 0) 0f else done.toFloat() / total
-    val progress by animateFloatAsState(
-        targetValue = target,
-        animationSpec = tween(500),
-        label = "ringProgress",
-    )
-    val fg = MaterialTheme.colorScheme.onTertiary
-    val trackColor = fg.copy(alpha = 0.18f)
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val stroke = 12.dp.toPx()
-            val diameter = minOf(size.width, size.height) - stroke
-            val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
-            val arcSize = Size(diameter, diameter)
-            drawArc(
-                color = trackColor,
-                startAngle = 0f,
-                sweepAngle = 360f,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = Stroke(width = stroke, cap = StrokeCap.Round),
-            )
-            if (progress > 0f) {
-                rotate(degrees = -90f) {
-                    drawArc(
-                        color = fg,
-                        startAngle = 0f,
-                        sweepAngle = 359.99f * progress,
-                        useCenter = false,
-                        topLeft = topLeft,
-                        size = arcSize,
-                        style = Stroke(width = stroke, cap = StrokeCap.Round),
-                    )
-                }
-            }
-        }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "$done/$total",
-                style = MaterialTheme.typography.headlineMedium,
+                text = greeting,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = fg,
+                modifier = Modifier.combinedClickable(
+                    onClick = {},
+                    onLongClick = onEditGreeting, // 长按问候语：自定义弹窗
+                ),
             )
-            Text(
-                text = stringResource(R.string.sfad522),
-                style = MaterialTheme.typography.bodySmall,
-                color = fg.copy(alpha = 0.65f),
+            Spacer(Modifier.height(12.dp))
+            // 今日待办大数字（displaySmall + tnum 防抖版）
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    text = "$pending",
+                    style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = fg,
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.today_todo),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+            // 进度条 + done/total
+            val total = pending + done
+            val fraction = if (total == 0) 0f else done.toFloat() / total
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(percent = 50))
+                        .background(trackColor),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(fraction)
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(percent = 50))
+                            .background(fillColor),
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "$done/$total",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Spacer(Modifier.width(SpaceS))
+        Box(contentAlignment = Alignment.Center) {
+            if (weather != null) {
+                WeatherColumn(weather)
+            } else {
+                GeometryDecoration()
+            }
+        }
+        }
+        // 逐小时预报通栏（hero 底部横条，hairline 分隔）
+        if (weather != null && weather.hourly.isNotEmpty()) {
+            Spacer(Modifier.height(SpaceS))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(fg.copy(alpha = 0.08f)),
             )
+            Spacer(Modifier.height(12.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                weather.hourly.forEachIndexed { index, h ->
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            text = "%02d:00".format(h.hour),
+                            fontSize = 13.sp,
+                            fontWeight = if (index == 0) FontWeight.SemiBold else FontWeight.Normal,
+                            color = if (index == 0) fg else fg.copy(alpha = 0.55f),
+                            maxLines = 1,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Icon(
+                            imageVector = iconForCondition(h.conditionCode),
+                            contentDescription = null,
+                            tint = if (index == 0) fg else fg.copy(alpha = 0.55f),
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
-// 右侧天气列：线条图标 + 温度/描述 + 城市 + 逐小时预报行（hero 卡内统一 onTertiary 反色系）
+// 右侧天气列：线条图标 + 温度/描述（hero 白卡内统一墨色层级）
 @Composable
 private fun WeatherColumn(weather: WeatherData) {
     // 天气条目码 → 按当前语言的天气文案
@@ -362,7 +403,7 @@ private fun WeatherColumn(weather: WeatherData) {
         7 -> stringResource(R.string.sc4fccd)
         else -> stringResource(R.string.sb2df13)
     }
-    val fg = MaterialTheme.colorScheme.onTertiary
+    val fg = MaterialTheme.colorScheme.onSurface
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(
             imageVector = iconForCondition(weather.conditionCode),
@@ -382,59 +423,32 @@ private fun WeatherColumn(weather: WeatherData) {
             Text(
                 text = condLabel,
                 style = MaterialTheme.typography.bodyMedium,
-                color = fg.copy(alpha = 0.70f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 3.dp),
             )
-        }
-        // 逐小时预报：现在 + 未来 3 小时（时间 / 图标 / 温度，对标参考图 hourly 条）
-        if (weather.hourly.isNotEmpty()) {
-            Spacer(Modifier.height(12.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                weather.hourly.forEachIndexed { index, h ->
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            text = "%02d:00".format(h.hour),
-                            fontSize = 13.sp,
-                            fontWeight = if (index == 0) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (index == 0) fg else fg.copy(alpha = 0.65f),
-                            maxLines = 1,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Icon(
-                            imageVector = iconForCondition(h.conditionCode),
-                            contentDescription = null,
-                            tint = if (index == 0) fg else fg.copy(alpha = 0.65f),
-                            modifier = Modifier.size(22.dp),
-                        )
-                    }
-                }
-            }
         }
     }
 }
 
-// 天气未获取到时的占位装饰：圆环 + 圆角方块 + 小圆（onTertiary alpha 层级，随 hero 反色）
+// 天气未获取到时的占位装饰：圆环 + 圆角方块 + 小圆（墨色 alpha 层级）
 @Composable
 private fun GeometryDecoration() {
-    val ink = MaterialTheme.colorScheme.onTertiary
+    val ink = MaterialTheme.colorScheme.onSurface
     Canvas(modifier = Modifier.size(width = 92.dp, height = 64.dp)) {
         drawCircle(
-            color = ink.copy(alpha = 0.70f),
+            color = ink.copy(alpha = 0.55f),
             radius = 22.dp.toPx(),
             center = Offset(30.dp.toPx(), 30.dp.toPx()),
             style = Stroke(width = 10.dp.toPx()),
         )
         drawRoundRect(
-            color = ink.copy(alpha = 0.30f),
+            color = ink.copy(alpha = 0.22f),
             topLeft = Offset(60.dp.toPx(), 8.dp.toPx()),
             size = Size(26.dp.toPx(), 26.dp.toPx()),
             cornerRadius = CornerRadius(8.dp.toPx()),
         )
         drawCircle(
-            color = ink.copy(alpha = 0.14f),
+            color = ink.copy(alpha = 0.10f),
             radius = 7.dp.toPx(),
             center = Offset(24.dp.toPx(), 56.dp.toPx()),
         )
@@ -443,7 +457,7 @@ private fun GeometryDecoration() {
 
 // ============ 快捷入口 ============
 
-// 快捷入口三小卡：期待 / 音乐 / 习惯打卡（中性图标圆底，按压 0.98 spring 反馈）
+// 快捷入口三小卡：期待 / 音乐 / 习惯打卡（pastel 图标块，按压 0.98 spring 反馈）
 @Composable
 fun QuickEntriesRow(
     onOpenExpects: () -> Unit,
@@ -455,18 +469,21 @@ fun QuickEntriesRow(
             modifier = Modifier.weight(1f),
             icon = Icons.Outlined.HourglassEmpty,
             title = stringResource(R.string.sx_entry),
+            category = CategoryIndigo,
             onClick = onOpenExpects,
         )
         QuickEntryCard(
             modifier = Modifier.weight(1f),
             icon = Icons.Outlined.MusicNote,
             title = stringResource(R.string.s95521b),
+            category = CategoryPink,
             onClick = onOpenMusic,
         )
         QuickEntryCard(
             modifier = Modifier.weight(1f),
             icon = Icons.Outlined.EventAvailable,
             title = stringResource(R.string.s0d63c6),
+            category = CategoryGreen,
             onClick = onOpenHabits,
         )
     }
@@ -477,13 +494,14 @@ private fun QuickEntryCard(
     modifier: Modifier = Modifier,
     icon: ImageVector,
     title: String,
+    category: CategoryColor,
     onClick: () -> Unit,
 ) {
+    // 分类 pastel 图标块：浅色用 bg 底、深色用 fg 低透明浮层（防深色背景上过亮）
+    val iconBg = if (LocalDarkTheme.current) category.fg.copy(alpha = 0.18f) else category.bg
     GlassCard(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .pressScale(onPress = onClick),
-        cornerRadius = 20,
+        modifier = modifier.pressScale(onPress = onClick),
+        cornerRadius = 12,
     ) {
         Column(
             modifier = Modifier
@@ -495,13 +513,13 @@ private fun QuickEntryCard(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)),
+                    .background(iconBg),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
+                    tint = category.fg,
                     modifier = Modifier.size(20.dp),
                 )
             }
