@@ -20,3 +20,8 @@ backend/__pycache__/
 .idea/
 *.iml
 .DS_Store
+
+# 签名密钥（不入库）
+*.jks
+*.keystore
+keystore.properties

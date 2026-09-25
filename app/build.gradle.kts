@@ -19,6 +19,12 @@ if (counterFile.exists()) {
 val isCompileExport = gradle.startParameter.taskNames.any {
     it.contains("assemble", ignoreCase = true) || it.contains("bundle", ignoreCase = true)
 }
+
+// 签名配置（keystore.properties 保存密钥信息，不入库）
+val keystorePropsFile = rootProject.file("keystore.properties")
+val keystoreProps = Properties().apply {
+    if (keystorePropsFile.exists()) keystorePropsFile.inputStream().use { load(it) }
+}
 var buildCount = counterProps.getProperty("buildCount")?.toIntOrNull() ?: 0
 if (isCompileExport) {
     buildCount += 1
@@ -47,6 +53,17 @@ android {
         buildConfigField("String", "GH_TOKEN", "\"${project.findProperty("GH_TOKEN") ?: ""}\"")
     }
 
+    signingConfigs {
+        if (keystorePropsFile.exists()) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
@@ -56,6 +73,7 @@ android {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = if (keystorePropsFile.exists()) signingConfigs.getByName("release") else null
         }
     }
 
