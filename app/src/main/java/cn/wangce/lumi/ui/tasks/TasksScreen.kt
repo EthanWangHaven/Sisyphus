@@ -164,7 +164,7 @@ fun TasksScreen(
     }
 
     editing?.let { todo ->
-        TodoEditSheet(
+        TodoEditDialog(
             todo = todo,
             onSave = { newTitle ->
                 viewModel.updateTodo(todo, newTitle)

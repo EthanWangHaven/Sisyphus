@@ -18,7 +18,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,7 +31,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -57,7 +55,6 @@ import cn.wangce.lumi.ui.components.DangerButton
 import cn.wangce.lumi.ui.components.GlassCard
 import cn.wangce.lumi.ui.components.LumiDialog
 import cn.wangce.lumi.ui.components.LumiDialogButtons
-import cn.wangce.lumi.ui.components.LumiSheet
 import cn.wangce.lumi.ui.components.PrimaryPillButton
 import cn.wangce.lumi.ui.components.SecondaryButton
 import cn.wangce.lumi.ui.components.SelectableChip
@@ -217,43 +214,42 @@ private fun CircleCheckbox(
     }
 }
 
-// 编辑弹层：底部 Sheet 修改标题
-@OptIn(ExperimentalMaterial3Api::class)
+// 编辑待办弹窗：与「添加待办」同款 LumiDialog 中央卡片（取消/保存等宽胶囊）
 @Composable
-internal fun TodoEditSheet(
+internal fun TodoEditDialog(
     todo: TodoEntity,
     onSave: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var text by remember(todo.id) { mutableStateOf(todo.title) }
-    LumiSheet(
+    LumiDialog(
         onDismissRequest = onDismiss,
         title = stringResource(R.string.sb994c3),
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            AppTextField(
-                value = text,
-                onValueChange = { text = it },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { if (text.isNotBlank()) onSave(text) }),
-            )
-            Spacer(Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                SecondaryButton(text = stringResource(R.string.s625fb2), onClick = onDismiss)
-                Spacer(Modifier.width(8.dp))
-                // 主操作墨黑胶囊，内容为空时禁用
+        actions = {
+            LumiDialogButtons {
+                // 取消：白底 hairline 胶囊
+                SecondaryButton(
+                    text = stringResource(R.string.s625fb2),
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                )
+                // 保存：主操作胶囊，内容为空时禁用
                 PrimaryPillButton(
                     text = stringResource(R.string.sbe5fbb),
                     onClick = { onSave(text) },
                     enabled = text.isNotBlank(),
+                    modifier = Modifier.weight(1f),
                 )
             }
-        }
+        },
+    ) {
+        AppTextField(
+            value = text,
+            onValueChange = { text = it },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { if (text.isNotBlank()) onSave(text) }),
+        )
     }
 }
 

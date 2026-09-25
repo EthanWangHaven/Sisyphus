@@ -84,7 +84,7 @@ import cn.wangce.lumi.ui.components.bottomNavSpace
 import cn.wangce.lumi.ui.moments.PathImage
 import cn.wangce.lumi.ui.tasks.FilterTabs
 import cn.wangce.lumi.ui.tasks.TodoDeleteDialog
-import cn.wangce.lumi.ui.tasks.TodoEditSheet
+import cn.wangce.lumi.ui.tasks.TodoEditDialog
 import cn.wangce.lumi.ui.tasks.TodoFilter
 import cn.wangce.lumi.ui.tasks.TodoRow
 import cn.wangce.lumi.ui.tasks.TasksViewModel
@@ -230,7 +230,7 @@ fun NotesScreen(
     }
 
     editingTodo?.let { todo ->
-        TodoEditSheet(
+        TodoEditDialog(
             todo = todo,
             onSave = { newTitle ->
                 tasksViewModel.updateTodo(todo, newTitle)
