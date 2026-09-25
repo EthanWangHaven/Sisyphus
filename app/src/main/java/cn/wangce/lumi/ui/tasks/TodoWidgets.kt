@@ -32,8 +32,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -95,7 +93,7 @@ internal fun FilterTabs(
 
 // 快速新增输入框已移除（需求新6：添加待办改为 NotesScreen 中央弹窗）
 
-// 单条待办：圆圈勾选 + 标题（完成态动画删除线）+ 创建日期尾注，点击编辑、长按菜单
+// 单条待办：圆圈勾选 + 标题（完成态动画删除线）+ 创建日期尾注，点击编辑、长按操作弹窗
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun TodoRow(
@@ -105,59 +103,71 @@ internal fun TodoRow(
     onRequestDelete: () -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
-    Box {
-        GlassCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .combinedClickable(
-                    onClick = onEdit,
-                    onLongClick = { menuOpen = true },
-                ),
-            cornerRadius = 12,
+    GlassCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .combinedClickable(
+                onClick = onEdit,
+                onLongClick = { menuOpen = true },
+            ),
+        cornerRadius = 12,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                CircleCheckbox(checked = todo.done, onToggle = onToggle)
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    text = todo.title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (todo.done) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    },
-                    textDecoration = if (todo.done) TextDecoration.LineThrough else null,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = todoDayLabel(LocalContext.current, todo.createdAt),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                )
-            }
+            CircleCheckbox(checked = todo.done, onToggle = onToggle)
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = todo.title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (todo.done) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                textDecoration = if (todo.done) TextDecoration.LineThrough else null,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = todoDayLabel(LocalContext.current, todo.createdAt),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            )
         }
-        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.s95b351)) },
-                onClick = {
-                    menuOpen = false
-                    onEdit()
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.s2f4aad)) },
-                onClick = {
-                    menuOpen = false
-                    onRequestDelete()
-                },
-            )
+    }
+    // 长按操作弹窗：与「添加待办」同款 LumiDialog 中央卡片，统一风格
+    if (menuOpen) {
+        LumiDialog(
+            onDismissRequest = { menuOpen = false },
+            title = todo.title,
+            actions = {
+                LumiDialogButtons {
+                    // 编辑：白底 hairline 胶囊
+                    SecondaryButton(
+                        text = stringResource(R.string.s95b351),
+                        onClick = {
+                            menuOpen = false
+                            onEdit()
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                    // 删除：破坏性操作，橙红底胶囊
+                    DangerButton(
+                        text = stringResource(R.string.s2f4aad),
+                        onClick = {
+                            menuOpen = false
+                            onRequestDelete()
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            },
+        ) {
         }
     }
 }
